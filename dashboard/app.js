@@ -47,6 +47,36 @@ const regionColors = {
   "Rest of World": colors.gold,
 };
 
+const sourceUrls = {
+  icsgFactbook: "https://icsg.org/copper-factbook/",
+  usgsCopper:
+    "https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf",
+  ieaCriticalMinerals:
+    "https://www.iea.org/reports/global-critical-minerals-outlook-2025",
+  worldBankGdp: "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD",
+  worldBankIndustry: "https://data.worldbank.org/indicator/NV.IND.TOTL.ZS",
+  worldBankPopulation: "https://data.worldbank.org/indicator/SP.POP.TOTL",
+  baseConfig: "/config/base_case.json",
+  bullConfig: "/config/bull_case.json",
+  bearConfig: "/config/bear_case.json",
+};
+
+function sourceLink(label, url) {
+  return `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>`;
+}
+
+function configLinkItems() {
+  return [
+    sourceLink("Base JSON", sourceUrls.baseConfig),
+    sourceLink("Bull JSON", sourceUrls.bullConfig),
+    sourceLink("Bear JSON", sourceUrls.bearConfig),
+  ];
+}
+
+function sourceNote(text, links = []) {
+  return `${text}${links.length ? `<div class="source-links">${links.join(" ")}</div>` : ""}`;
+}
+
 function parseCsv(text) {
   const rows = [];
   const lines = text.trim().split(/\r?\n/);
@@ -323,10 +353,29 @@ function renderScenarioExplanation(state) {
   const rows = [
     {
       label: "Starting refined demand",
+      source: sourceNote(
+        "ICSG Factbook 2025 reports 2024 refined copper usage at 27.4 Mt. The model stores that as 27,400 kt.",
+        [sourceLink("ICSG usage", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) => `${formatKt(config.demand.global_refined_demand_kt)} kt in ${config.base_year}`,
     },
     {
+      label: "Starting mine/refinery supply",
+      source: sourceNote(
+        "USGS Mineral Commodity Summaries 2025 reports 2024 world mine production at 23,000 kt and refinery production at 27,000 kt.",
+        [sourceLink("USGS copper table", sourceUrls.usgsCopper), ...configLinkItems()],
+      ),
+      format: (config) =>
+        `${formatKt(config.supply.mine_production_kt)} kt mine, ${formatKt(
+          config.supply.refinery_production_kt,
+        )} kt refinery in ${config.base_year}`,
+    },
+    {
       label: "Regional demand shares",
+      source: sourceNote(
+        "ICSG says China accounted for 58% of 2024 global refined copper usage; Asia was 76%, Europe 14%, and North America 8%. US, EU, and Rest-of-World are simplified model buckets based on that context.",
+        [sourceLink("ICSG regional usage", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) =>
         Object.entries(config.demand.regions)
           .map(([name, region]) => `${name}: ${formatPct(region.share, 0)}`)
@@ -334,6 +383,15 @@ function renderScenarioExplanation(state) {
     },
     {
       label: "Demand driver weights",
+      source: sourceNote(
+        "World Bank GDP, industry-share, and population indicators are the public drivers. The weights are model judgment, with industry largest because copper use is concentrated in industrial, construction, electrical, and infrastructure activity.",
+        [
+          sourceLink("GDP", sourceUrls.worldBankGdp),
+          sourceLink("Industry share", sourceUrls.worldBankIndustry),
+          sourceLink("Population", sourceUrls.worldBankPopulation),
+          ...configLinkItems(),
+        ],
+      ),
       format: (config) =>
         `industry ${formatPct(config.demand.driver_weights.industry_value_added, 0)}, income ${formatPct(
           config.demand.driver_weights.gdp_per_capita,
@@ -342,20 +400,36 @@ function renderScenarioExplanation(state) {
     },
     {
       label: "Extra demand shock",
+      source: sourceNote(
+        "This is a scenario stress knob, not a published forecast. The idea comes from IEA-style scenario framing for critical minerals demand uncertainty; the exact percentage is set by the scenario JSON.",
+        [sourceLink("IEA scenarios", sourceUrls.ieaCriticalMinerals), ...configLinkItems()],
+      ),
       format: (config) => `${formatSignedPct(config.demand.scenario_growth_shock)} per year`,
     },
     {
       label: "Energy-transition bonus",
+      source: sourceNote(
+        "IEA provides copper demand and supply outlooks across energy-transition scenarios. The dashboard uses that as the reason for a transition-demand bonus; the exact annual bonus is a model assumption.",
+        [sourceLink("IEA copper outlook", sourceUrls.ieaCriticalMinerals), ...configLinkItems()],
+      ),
       format: (config) => `${formatPct(averageTransitionBonus(config))} weighted average per year`,
       detail: regionBonusText,
     },
     {
       label: "Demand growth cap",
+      source: sourceNote(
+        "No external forecast is used for this. It is a model guardrail so the macro proxy cannot create extreme one-year demand growth.",
+        configLinkItems(),
+      ),
       format: (config) =>
         `${formatPct(config.demand.growth_floor)} floor, ${formatPct(config.demand.growth_cap)} cap`,
     },
     {
       label: "Primary / secondary refined split",
+      source: sourceNote(
+        "ICSG reports 2024 refined output as 65.5% primary from concentrates, 17.4% SX-EW from leaching ores, and 17.1% secondary. The model groups primary plus SX-EW as primary supply, so the base split is about 83% primary and 17% secondary.",
+        [sourceLink("ICSG refined production", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) =>
         `${formatPct(config.supply.primary_refined_share, 0)} primary, ${formatPct(
           1 - config.supply.primary_refined_share,
@@ -364,19 +438,35 @@ function renderScenarioExplanation(state) {
     },
     {
       label: "Mine/refinery project growth",
+      source: sourceNote(
+        "ICSG refinery-capacity data says capacity is expected to grow through 2028, but capacity is not the same as production. The annual production-growth number here is a conservative scenario assumption.",
+        [sourceLink("ICSG capacity trends", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) => `${formatPct(config.supply.project_pipeline_growth)} per year`,
     },
     {
       label: "Disruption loss",
+      source: sourceNote(
+        "ICSG highlights constraints on copper supply. The loss percentage is a scenario stress assumption for outages, grades, delays, and operating disruption.",
+        [sourceLink("ICSG supply constraints", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) => `${formatPct(config.supply.disruption_loss)} per year`,
     },
     {
       label: "Secondary supply demand link",
+      source: sourceNote(
+        "ICSG identifies recycling, scrap supply, prices, industrial growth, regulation, and technology as scrap-market drivers. This link turns stronger demand into some extra secondary supply response.",
+        [sourceLink("ICSG scrap drivers", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) =>
         `${formatPct(config.secondary_supply.demand_link, 0)} of demand growth flows into secondary supply growth`,
     },
     {
       label: "Secondary collection growth",
+      source: sourceNote(
+        "ICSG recycling work is the source for the collection/recycling concept. The annual collection growth rate is a scenario assumption about how quickly scrap systems improve.",
+        [sourceLink("ICSG recycling", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
       format: (config) => `${formatPct(config.secondary_supply.collection_growth)} per year`,
     },
   ];
@@ -390,7 +480,7 @@ function renderScenarioExplanation(state) {
           return `<td>${mainText}${detailText ? `<br><small>${detailText}</small>` : ""}</td>`;
         })
         .join("");
-      return `<tr><td>${row.label}</td>${cells}</tr>`;
+      return `<tr><td>${row.label}</td><td class="assumption-source">${row.source}</td>${cells}</tr>`;
     })
     .join("");
 }

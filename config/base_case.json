@@ -3,11 +3,11 @@
   "base_year": 2024,
   "forecast_end_year": 2035,
   "demand": {
-    "global_refined_demand_kt": 27000.0,
+    "global_refined_demand_kt": 27400.0,
     "regions": {
       "China": {
         "world_bank_code": "CHN",
-        "share": 0.55,
+        "share": 0.58,
         "transition_growth_bonus": 0.006
       },
       "United States": {
@@ -22,7 +22,7 @@
       },
       "Rest of World": {
         "world_bank_code": "ROW",
-        "share": 0.26,
+        "share": 0.23,
         "transition_growth_bonus": 0.004
       }
     },
@@ -39,7 +39,7 @@
   "supply": {
     "mine_production_kt": 23000.0,
     "refinery_production_kt": 27000.0,
-    "primary_refined_share": 0.82,
+    "primary_refined_share": 0.83,
     "recent_growth_floor": -0.01,
     "recent_growth_cap": 0.03,
     "project_pipeline_growth": 0.006,

@@ -2,10 +2,11 @@
 
 Python model for a global refined copper supply-demand balance.
 
-The model combines public macro feeds with a USGS copper supply seed table:
+The model combines public macro feeds with public copper market baselines:
 
 - World Bank API: annual real GDP, industry share of GDP, and population indicators.
 - USGS Mineral Commodity Summaries 2025: global and country mine/refinery production baselines.
+- ICSG World Copper Factbook 2025: 2024 refined usage, regional usage, primary/secondary refined production context, capacity trends, supply constraints, and scrap/recycling context.
 
 This is a transparent planning model, not a trading model. It is built to make assumptions visible and easy to change.
 
@@ -56,14 +57,14 @@ Supply is split into primary and secondary refined copper:
 - Primary supply grows with recent USGS mine/refinery growth, pipeline assumptions, and disruption assumptions.
 - Secondary supply grows with demand and collection-rate assumptions.
 - Mine supply is also allocated by country using USGS 2024 mine-production shares.
-- The primary/secondary refined split is a scenario assumption. In the base case it is 82% primary and 18% secondary.
+- The primary/secondary refined split starts from ICSG's 2024 refined-production mix. In the base case it is 83% primary and 17% secondary, grouping SX-EW refined output with primary supply.
 
 ## Configuration
 
 Edit `config/base_case.json`, `config/bull_case.json`, or `config/bear_case.json` to change:
 
 - forecast horizon;
-- 2024 demand assumptions;
+- 2024 demand baseline;
 - regional demand shares and growth weights;
 - mine/refinery growth assumptions;
 - scrap share and collection growth.
@@ -90,6 +91,15 @@ Seed tables in `data/seed/` are manually transcribed from:
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
 
+The main non-USGS assumption sources are:
+
+- ICSG World Copper Factbook 2025:
+  `https://icsg.org/copper-factbook/`
+- IEA Global Critical Minerals Outlook 2025:
+  `https://www.iea.org/reports/global-critical-minerals-outlook-2025`
+
+The dashboard's "How Scenarios Are Built" table gives a source or rationale for every assumption row. Where a number is a model judgment rather than a published estimate, the dashboard says that directly and links to the scenario JSON files.
+
 ## Tests
 
 ```bash
@@ -98,6 +108,6 @@ python3 -m pytest
 
 ## Caveats
 
-- Public machine-readable global copper demand data is limited. The model calibrates 2024 refined demand to refined production and then projects forward from public macro drivers.
+- Public machine-readable global copper demand data is limited. The model sets 2024 refined demand from ICSG's 27.4 Mt refined-usage estimate and then projects forward from public macro drivers.
 - Industry demand uses a real industry-output proxy: real GDP multiplied by World Bank industry value added as a percentage of GDP.
 - The model does not estimate inventory or price. It only reports the annual refined copper surplus or deficit.

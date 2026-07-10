@@ -373,7 +373,7 @@ input[type="range"] {
 
 .assumption-table {
   width: 100%;
-  min-width: 780px;
+  min-width: 1180px;
   border-collapse: collapse;
   background: var(--surface);
 }
@@ -413,7 +413,29 @@ input[type="range"] {
 .assumption-table td:first-child {
   color: var(--ink);
   font-weight: 700;
-  width: 28%;
+  width: 16%;
+}
+
+.assumption-table .assumption-source {
+  width: 34%;
+  font-weight: 400;
+}
+
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+
+.assumption-table a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.assumption-table a:hover {
+  text-decoration: underline;
 }
 
 .source-grid {

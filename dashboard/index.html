@@ -85,7 +85,7 @@
           <span class="badge">Assumptions, not sourced forecasts</span>
         </div>
         <div class="explanation-copy">
-          <p>The same public data baseline is used in every scenario: USGS 2024 mine/refinery supply and World Bank macro drivers.</p>
+          <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, USGS 2024 mine/refinery supply, and World Bank macro drivers.</p>
           <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
           <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
         </div>
@@ -95,6 +95,7 @@
             <thead>
               <tr>
                 <th>Assumption</th>
+                <th>Source / Rationale</th>
                 <th>Base</th>
                 <th>Bull</th>
                 <th>Bear</th>
@@ -120,6 +121,18 @@
           </article>
 
           <article class="source-card">
+            <h3>ICSG Market Context</h3>
+            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, and scrap/recycling context.</p>
+            <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
+          </article>
+
+          <article class="source-card">
+            <h3>Energy Transition Context</h3>
+            <p>Used only to justify scenario framing around stronger or weaker transition-related mineral demand, not the exact model percentages.</p>
+            <a href="https://www.iea.org/reports/global-critical-minerals-outlook-2025" target="_blank" rel="noreferrer">IEA Global Critical Minerals Outlook 2025</a>
+          </article>
+
+          <article class="source-card">
             <h3>World Bank API Calls</h3>
             <p>Exact API endpoints used to build <code>data/raw/world_bank_indicators.csv</code>.</p>
             <a href="https://api.worldbank.org/v2/country/WLD;CHN;USA;EUU/indicator/NY.GDP.MKTP.KD?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">Real GDP API response</a>
@@ -137,7 +150,7 @@
 
           <article class="source-card">
             <h3>Scenario Assumptions</h3>
-            <p>Demand shares, growth weights, supply-growth rules, and primary/secondary refined split. The 82%/18% base-case supply split is an assumption here, not a USGS data point.</p>
+            <p>Growth weights, supply-growth rules, and scenario stress knobs. The base-case 83%/17% primary/secondary split follows the ICSG 2024 refined-production split after grouping SX-EW with primary supply; bull and bear move around it.</p>
             <a href="/config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
             <a href="/config/bull_case.json" target="_blank" rel="noreferrer">Bull-case assumptions JSON</a>
             <a href="/config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>
