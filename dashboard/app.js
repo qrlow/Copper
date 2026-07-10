@@ -21,6 +21,7 @@ const SCENARIOS = [
 
 function scenarioFiles(id) {
   return {
+    config: `/config/${id}.json`,
     forecast: `/outputs/${id}_forecast.csv`,
     regional: `/outputs/${id}_regional_demand.csv`,
     mine: `/outputs/${id}_mine_supply_by_country.csv`,
@@ -96,6 +97,16 @@ function formatKt(value) {
 function formatSignedKt(value) {
   const rounded = Math.round(value);
   return `${rounded > 0 ? "+" : ""}${rounded.toLocaleString()}`;
+}
+
+function formatPct(value, digits = 1) {
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
+function formatSignedPct(value, digits = 1) {
+  const scaled = value * 100;
+  const sign = scaled > 0 ? "+" : "";
+  return `${sign}${scaled.toFixed(digits)}%`;
 }
 
 function extent(values) {
@@ -289,6 +300,101 @@ function renderScenarioOptions(state) {
   select.value = state.selectedScenarioId;
 }
 
+function averageTransitionBonus(config) {
+  const regions = Object.values(config.demand.regions);
+  return regions.reduce((sum, region) => sum + region.share * region.transition_growth_bonus, 0);
+}
+
+function regionBonusText(config) {
+  return Object.entries(config.demand.regions)
+    .map(([name, region]) => `${name}: ${formatPct(region.transition_growth_bonus)}`)
+    .join("; ");
+}
+
+function scenarioCell(state, scenarioId, formatter) {
+  return formatter(state.scenarios[scenarioId].config);
+}
+
+function renderScenarioExplanation(state) {
+  const selected = state.scenarios[state.selectedScenarioId];
+  const summary = document.getElementById("selectedScenarioExplanation");
+  summary.innerHTML = `<p><strong>${selected.label}:</strong> ${selected.description}</p>`;
+
+  const rows = [
+    {
+      label: "Starting refined demand",
+      format: (config) => `${formatKt(config.demand.global_refined_demand_kt)} kt in ${config.base_year}`,
+    },
+    {
+      label: "Regional demand shares",
+      format: (config) =>
+        Object.entries(config.demand.regions)
+          .map(([name, region]) => `${name}: ${formatPct(region.share, 0)}`)
+          .join("; "),
+    },
+    {
+      label: "Demand driver weights",
+      format: (config) =>
+        `industry ${formatPct(config.demand.driver_weights.industry_value_added, 0)}, income ${formatPct(
+          config.demand.driver_weights.gdp_per_capita,
+          0,
+        )}, population ${formatPct(config.demand.driver_weights.population, 0)}`,
+    },
+    {
+      label: "Extra demand shock",
+      format: (config) => `${formatSignedPct(config.demand.scenario_growth_shock)} per year`,
+    },
+    {
+      label: "Energy-transition bonus",
+      format: (config) => `${formatPct(averageTransitionBonus(config))} weighted average per year`,
+      detail: regionBonusText,
+    },
+    {
+      label: "Demand growth cap",
+      format: (config) =>
+        `${formatPct(config.demand.growth_floor)} floor, ${formatPct(config.demand.growth_cap)} cap`,
+    },
+    {
+      label: "Primary / secondary refined split",
+      format: (config) =>
+        `${formatPct(config.supply.primary_refined_share, 0)} primary, ${formatPct(
+          1 - config.supply.primary_refined_share,
+          0,
+        )} secondary`,
+    },
+    {
+      label: "Mine/refinery project growth",
+      format: (config) => `${formatPct(config.supply.project_pipeline_growth)} per year`,
+    },
+    {
+      label: "Disruption loss",
+      format: (config) => `${formatPct(config.supply.disruption_loss)} per year`,
+    },
+    {
+      label: "Secondary supply demand link",
+      format: (config) =>
+        `${formatPct(config.secondary_supply.demand_link, 0)} of demand growth flows into secondary supply growth`,
+    },
+    {
+      label: "Secondary collection growth",
+      format: (config) => `${formatPct(config.secondary_supply.collection_growth)} per year`,
+    },
+  ];
+
+  document.getElementById("scenarioAssumptions").innerHTML = rows
+    .map((row) => {
+      const cells = ["base_case", "bull_case", "bear_case"]
+        .map((scenarioId) => {
+          const mainText = scenarioCell(state, scenarioId, row.format);
+          const detailText = row.detail ? row.detail(state.scenarios[scenarioId].config) : "";
+          return `<td>${mainText}${detailText ? `<br><small>${detailText}</small>` : ""}</td>`;
+        })
+        .join("");
+      return `<tr><td>${row.label}</td>${cells}</tr>`;
+    })
+    .join("");
+}
+
 function syncYearRange(forecast) {
   const years = forecast.map((row) => row.year);
   const yearRange = document.getElementById("yearRange");
@@ -314,6 +420,7 @@ function render(state) {
 
   document.getElementById("scenarioEyebrow").textContent = scenario.eyebrow;
   renderScenarioOptions(state);
+  renderScenarioExplanation(state);
   updateMetrics(selectedForecast);
   renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
@@ -329,16 +436,25 @@ async function loadDataset(url) {
   return parseCsv(await response.text());
 }
 
+async function loadJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load ${url}`);
+  }
+  return response.json();
+}
+
 async function init() {
   const scenarioEntries = await Promise.all(
     SCENARIOS.map(async (scenario) => {
       const files = scenarioFiles(scenario.id);
-      const [forecast, regional, mine] = await Promise.all([
+      const [config, forecast, regional, mine] = await Promise.all([
+        loadJson(files.config),
         loadDataset(files.forecast),
         loadDataset(files.regional),
         loadDataset(files.mine),
       ]);
-      return [scenario.id, { ...scenario, files, forecast, regional, mine }];
+      return [scenario.id, { ...scenario, files, config, forecast, regional, mine }];
     }),
   );
 

@@ -74,6 +74,8 @@ Scenario framing:
 - Bull case: higher electrification demand, tighter supply, and lower scrap response.
 - Bear case: softer demand, stronger supply additions, and higher scrap response.
 
+The scenarios are not external forecasts. They are assumption sets built from the same public baseline. Each scenario changes demand-growth shocks, energy-transition bonuses, supply pipeline growth, disruption loss, and secondary-supply response.
+
 ## Data Sources
 
 The fetch step downloads:

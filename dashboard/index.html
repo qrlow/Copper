@@ -79,6 +79,32 @@
         </article>
       </section>
 
+      <section class="panel explanation-panel" aria-labelledby="scenarioExplanationHeading">
+        <div class="panel-header">
+          <h2 id="scenarioExplanationHeading">How Scenarios Are Built</h2>
+          <span class="badge">Assumptions, not sourced forecasts</span>
+        </div>
+        <div class="explanation-copy">
+          <p>The same public data baseline is used in every scenario: USGS 2024 mine/refinery supply and World Bank macro drivers.</p>
+          <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
+          <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
+        </div>
+        <div id="selectedScenarioExplanation" class="scenario-summary"></div>
+        <div class="assumption-table-wrap">
+          <table class="assumption-table">
+            <thead>
+              <tr>
+                <th>Assumption</th>
+                <th>Base</th>
+                <th>Bull</th>
+                <th>Bear</th>
+              </tr>
+            </thead>
+            <tbody id="scenarioAssumptions"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel sources-panel" aria-labelledby="sourcesHeading">
         <div class="panel-header">
           <h2 id="sourcesHeading">Data Sources & Assumptions</h2>
