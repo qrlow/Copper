@@ -43,6 +43,16 @@
           <small>kt surplus / deficit</small>
         </article>
         <article class="metric">
+          <span>Ending Stocks</span>
+          <strong id="metricStocks">--</strong>
+          <small>modeled kt inventory</small>
+        </article>
+        <article class="metric">
+          <span>Inventory Cover</span>
+          <strong id="metricCover">--</strong>
+          <small>modeled demand days</small>
+        </article>
+        <article class="metric">
           <span>Implied Price</span>
           <strong id="metricPrice">--</strong>
           <small>USD per metric ton</small>
@@ -61,9 +71,10 @@
         <article class="panel">
           <div class="panel-header">
             <h2>Supply Mix</h2>
-            <span class="badge">Primary vs secondary</span>
+            <span class="badge">Scenario assumption</span>
           </div>
           <div id="supplyMixChart" class="chart donut" role="img" aria-label="Primary and secondary refined copper supply"></div>
+          <p class="panel-note">Primary refined copper comes from mined material. Secondary refined copper comes from scrap or recycled copper. This split is set in the scenario JSON.</p>
         </article>
 
         <article class="panel">
@@ -122,7 +133,7 @@
 
           <article class="source-card">
             <h3>Scenario Assumptions</h3>
-            <p>Demand shares, growth weights, supply-growth rules, inventory assumptions, and price-stress parameters.</p>
+            <p>Demand shares, growth weights, primary/secondary refined split, inventory assumptions, and price-stress parameters. The 82%/18% base-case supply split is an assumption here, not a USGS data point.</p>
             <a href="/config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
             <a href="/config/bull_case.json" target="_blank" rel="noreferrer">Bull-case assumptions JSON</a>
             <a href="/config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>

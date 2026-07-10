@@ -58,6 +58,8 @@ Supply is split into primary and secondary refined copper:
 - Primary supply grows with recent USGS mine/refinery growth, pipeline assumptions, and price incentive.
 - Secondary supply grows with demand, collection-rate assumptions, and price incentive.
 - Mine supply is also allocated by country using USGS 2024 mine-production shares.
+- The primary/secondary refined split is a scenario assumption. In the base case it is 82% primary and 18% secondary.
+- Inventory is modeled from the annual market balance. It is not observed exchange or bonded stock data.
 
 ## Configuration
 

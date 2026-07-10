@@ -276,6 +276,8 @@ function updateMetrics(row) {
   document.getElementById("metricDemand").textContent = formatKt(row.demand_kt);
   document.getElementById("metricSupply").textContent = formatKt(row.refined_supply_kt);
   document.getElementById("metricBalance").textContent = formatSignedKt(row.market_balance_kt);
+  document.getElementById("metricStocks").textContent = formatKt(row.ending_stocks_kt);
+  document.getElementById("metricCover").textContent = `${row.inventory_cover_days.toFixed(1)}`;
   document.getElementById("metricPrice").textContent = formatUsd(row.implied_price_usd_per_t);
   document.getElementById("coverBadge").textContent = `${row.inventory_cover_days.toFixed(1)} days cover`;
 }
