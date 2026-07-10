@@ -17,7 +17,10 @@ python3 -m pip install -e ".[dev]"
 python3 -m copper_model fetch
 python3 -m copper_model forecast
 python3 -m copper_model plot
+python3 -m http.server 8000
 ```
+
+Open `http://127.0.0.1:8000/dashboard/` to view the dashboard.
 
 Outputs are written to `outputs/`:
 
@@ -25,6 +28,8 @@ Outputs are written to `outputs/`:
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
 - `base_case_balance.png`: chart of demand, supply, balance, and implied price.
+
+The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`.
 
 ## Model Structure
 

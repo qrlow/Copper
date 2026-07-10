@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Copper Supply-Demand Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Base Case</p>
+          <h1>Copper Supply-Demand Dashboard</h1>
+        </div>
+        <div class="topbar-actions">
+          <label class="year-control" for="yearRange">
+            <span>Year</span>
+            <strong id="selectedYearLabel">2035</strong>
+          </label>
+          <input id="yearRange" type="range" min="2024" max="2035" value="2035" />
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="Selected year metrics">
+        <article class="metric">
+          <span>Demand</span>
+          <strong id="metricDemand">--</strong>
+          <small>kt refined copper</small>
+        </article>
+        <article class="metric">
+          <span>Refined Supply</span>
+          <strong id="metricSupply">--</strong>
+          <small>kt refined copper</small>
+        </article>
+        <article class="metric accent">
+          <span>Market Balance</span>
+          <strong id="metricBalance">--</strong>
+          <small>kt surplus / deficit</small>
+        </article>
+        <article class="metric">
+          <span>Implied Price</span>
+          <strong id="metricPrice">--</strong>
+          <small>USD per metric ton</small>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel wide">
+          <div class="panel-header">
+            <h2>Global Balance</h2>
+            <span id="coverBadge" class="badge">-- days cover</span>
+          </div>
+          <div id="balanceChart" class="chart large" role="img" aria-label="Global copper supply-demand chart"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Supply Mix</h2>
+            <span class="badge">Primary vs secondary</span>
+          </div>
+          <div id="supplyMixChart" class="chart donut" role="img" aria-label="Primary and secondary refined copper supply"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Regional Demand</h2>
+            <span id="regionalTotal" class="badge">-- kt</span>
+          </div>
+          <div id="regionalDemandChart" class="bar-stack" role="img" aria-label="Regional copper demand bars"></div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-header">
+            <h2>Mine Supply By Country</h2>
+            <span id="mineTotal" class="badge">-- kt</span>
+          </div>
+          <div id="mineSupplyChart" class="ranked-bars" role="img" aria-label="Mine supply ranking by country"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
