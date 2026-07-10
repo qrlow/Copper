@@ -11,7 +11,7 @@
       <header class="topbar">
         <div>
           <p id="scenarioEyebrow" class="eyebrow">Base Case</p>
-          <h1>Copper Supply-Demand Dashboard</h1>
+          <h1>Copper Market Intelligence Workbench</h1>
         </div>
         <div class="topbar-actions">
           <label class="scenario-control" for="scenarioSelect">
@@ -41,6 +41,90 @@
           <span>Market Balance</span>
           <strong id="metricBalance">--</strong>
           <small>kt surplus / deficit</small>
+        </article>
+      </section>
+
+      <section class="workbench-grid" aria-label="Executive market view">
+        <article class="panel insight-panel">
+          <div class="panel-header">
+            <h2>Decision Question</h2>
+            <span id="marketSignalBadge" class="badge">--</span>
+          </div>
+          <p class="panel-kicker">Is refined copper likely to tighten by the selected year?</p>
+          <strong id="marketSignal" class="signal-value">--</strong>
+          <p id="marketSignalCopy" class="panel-note">--</p>
+        </article>
+
+        <article class="panel insight-panel">
+          <div class="panel-header">
+            <h2>Scenario Read-Through</h2>
+            <span id="readthroughBadge" class="badge">--</span>
+          </div>
+          <p id="selectedReadthrough" class="readthrough-copy">--</p>
+          <dl class="mini-stats">
+            <div>
+              <dt>Demand growth</dt>
+              <dd id="demandGrowthStat">--</dd>
+            </div>
+            <div>
+              <dt>Supply growth</dt>
+              <dd id="supplyGrowthStat">--</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="panel insight-panel">
+          <div class="panel-header">
+            <h2>Commercial Implications</h2>
+            <span class="badge">Narrative</span>
+          </div>
+          <ul id="commercialImplications" class="implication-list"></ul>
+        </article>
+      </section>
+
+      <section class="analysis-grid" aria-label="Scenario and driver analysis">
+        <article class="panel comparison-panel">
+          <div class="panel-header">
+            <h2>Scenario Comparison</h2>
+            <span id="comparisonYearBadge" class="badge">--</span>
+          </div>
+          <div id="scenarioComparisonBars" class="comparison-bars" role="img" aria-label="Scenario market balance comparison"></div>
+          <div class="compact-table-wrap">
+            <table class="compact-table">
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Demand</th>
+                  <th>Refined supply</th>
+                  <th>Balance</th>
+                  <th>Cumulative balance</th>
+                </tr>
+              </thead>
+              <tbody id="scenarioComparisonRows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel driver-panel">
+          <div class="panel-header">
+            <h2>What Moves The Balance</h2>
+            <span id="driverYearBadge" class="badge">--</span>
+          </div>
+          <p id="driverSummary" class="panel-note">--</p>
+          <div class="compact-table-wrap">
+            <table class="compact-table driver-table">
+              <thead>
+                <tr>
+                  <th>Driver</th>
+                  <th>Base</th>
+                  <th>Bull</th>
+                  <th>Bear</th>
+                  <th>Why it matters</th>
+                </tr>
+              </thead>
+              <tbody id="driverRows"></tbody>
+            </table>
+          </div>
         </article>
       </section>
 

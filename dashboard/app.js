@@ -139,6 +139,40 @@ function formatSignedPct(value, digits = 1) {
   return `${sign}${scaled.toFixed(digits)}%`;
 }
 
+function formatBalance(value) {
+  if (Math.abs(value) < 100) {
+    return `near balance (${formatSignedKt(value)} kt)`;
+  }
+  return `${formatKt(Math.abs(value))} kt ${value < 0 ? "deficit" : "surplus"}`;
+}
+
+function balanceClass(value) {
+  if (value < -100) return "deficit";
+  if (value > 100) return "surplus";
+  return "balanced";
+}
+
+function rowForYear(scenario, year) {
+  return scenario.forecast.find((row) => row.year === year) ?? scenario.forecast.at(-1);
+}
+
+function cumulativeBalance(scenario, year) {
+  return scenario.forecast
+    .filter((row) => row.year <= year)
+    .reduce((sum, row) => sum + row.market_balance_kt, 0);
+}
+
+function scenarioRowsForYear(state, year) {
+  return SCENARIOS.map((scenario) => {
+    const loadedScenario = state.scenarios[scenario.id];
+    return {
+      ...loadedScenario,
+      row: rowForYear(loadedScenario, year),
+      cumulativeBalance: cumulativeBalance(loadedScenario, year),
+    };
+  });
+}
+
 function extent(values) {
   return [Math.min(...values), Math.max(...values)];
 }
@@ -316,6 +350,90 @@ function updateMetrics(row) {
   document.getElementById("balanceBadge").textContent = `${formatSignedKt(row.market_balance_kt)} kt`;
 }
 
+function renderExecutiveView(state, year) {
+  const selected = state.scenarios[state.selectedScenarioId];
+  const row = rowForYear(selected, year);
+  const scenarioRows = scenarioRowsForYear(state, year);
+  const deficitCount = scenarioRows.filter(({ row: scenarioRow }) => scenarioRow.market_balance_kt < -100).length;
+  const demandGrowth = row.demand_kt / Number(selected.config.demand.global_refined_demand_kt) - 1;
+  const supplyGrowth = row.refined_supply_kt / Number(selected.config.supply.refinery_production_kt) - 1;
+  const signal = document.getElementById("marketSignal");
+
+  document.getElementById("marketSignalBadge").textContent = `${year} signal`;
+  signal.textContent = formatBalance(row.market_balance_kt);
+  signal.className = `signal-value ${balanceClass(row.market_balance_kt)}`;
+  document.getElementById("marketSignalCopy").textContent =
+    `In ${selected.label}, refined demand is ${formatKt(row.demand_kt)} kt against ${formatKt(
+      row.refined_supply_kt,
+    )} kt of refined supply. ${deficitCount} of 3 scenarios are in deficit at ${year}.`;
+
+  document.getElementById("readthroughBadge").textContent = selected.label;
+  document.getElementById("demandGrowthStat").textContent = formatSignedPct(demandGrowth);
+  document.getElementById("supplyGrowthStat").textContent = formatSignedPct(supplyGrowth);
+  document.getElementById("selectedReadthrough").textContent =
+    row.market_balance_kt < -100
+      ? "The selected scenario tightens because demand growth is running ahead of refined supply growth. This is a physical-balance signal, not a price forecast."
+      : "The selected scenario is close to balanced because weaker demand or stronger supply offsets most of the projected demand growth.";
+
+  const implicationItems =
+    row.market_balance_kt < -100
+      ? [
+          "Sales: tighter balances support closer attention to customer coverage, contract timing, and regional demand signals.",
+          `Operations: primary supply growth is ${formatPct(row.primary_supply_growth)} per year in this scenario, so project execution and disruption assumptions matter.`,
+          "Market narrative: China demand, energy-transition demand, mine growth, and scrap response are the key swing factors.",
+        ]
+      : [
+          "Sales: a looser balance would shift attention toward demand resilience and customer pull-through.",
+          "Operations: stronger mine/refinery growth and scrap response are doing most of the offsetting work.",
+          "Market narrative: the main risk is that demand weakens faster than supply adjusts.",
+        ];
+
+  document.getElementById("commercialImplications").innerHTML = implicationItems
+    .map((item) => `<li>${item}</li>`)
+    .join("");
+}
+
+function renderScenarioComparison(state, year) {
+  const rows = scenarioRowsForYear(state, year);
+  const maxAbsBalance = Math.max(...rows.map(({ row }) => Math.abs(row.market_balance_kt)), 1);
+  document.getElementById("comparisonYearBadge").textContent = `${year}`;
+
+  document.getElementById("scenarioComparisonBars").innerHTML = rows
+    .map(({ id, label, row }) => {
+      const width = Math.max((Math.abs(row.market_balance_kt) / maxAbsBalance) * 48, 1);
+      const left = row.market_balance_kt < 0 ? 50 - width : 50;
+      const tone = balanceClass(row.market_balance_kt);
+      const selectedClass = id === state.selectedScenarioId ? "is-selected" : "";
+      return `
+        <div class="comparison-bar-row ${selectedClass}">
+          <span class="comparison-label">${label}</span>
+          <span class="comparison-track">
+            <span class="comparison-zero"></span>
+            <span class="comparison-fill ${tone}" style="left:${left}%;width:${width}%"></span>
+          </span>
+          <strong class="${tone}">${formatBalance(row.market_balance_kt)}</strong>
+        </div>
+      `;
+    })
+    .join("");
+
+  document.getElementById("scenarioComparisonRows").innerHTML = rows
+    .map(({ id, label, row, cumulativeBalance: totalBalance }) => {
+      const tone = balanceClass(row.market_balance_kt);
+      const selectedClass = id === state.selectedScenarioId ? " class=\"is-selected\"" : "";
+      return `
+        <tr${selectedClass}>
+          <td>${label}</td>
+          <td>${formatKt(row.demand_kt)} kt</td>
+          <td>${formatKt(row.refined_supply_kt)} kt</td>
+          <td class="${tone}">${formatBalance(row.market_balance_kt)}</td>
+          <td>${formatSignedKt(totalBalance)} kt</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
 function renderScenarioOptions(state) {
   const select = document.getElementById("scenarioSelect");
   if (select.options.length === 0) {
@@ -333,6 +451,70 @@ function renderScenarioOptions(state) {
 function averageTransitionBonus(config) {
   const regions = Object.values(config.demand.regions);
   return regions.reduce((sum, region) => sum + region.share * region.transition_growth_bonus, 0);
+}
+
+function demandPressure(config) {
+  return averageTransitionBonus(config) + Number(config.demand.scenario_growth_shock);
+}
+
+function secondaryResponseText(config) {
+  return `${formatPct(config.secondary_supply.demand_link, 0)} demand link + ${formatPct(
+    config.secondary_supply.collection_growth,
+  )} collection`;
+}
+
+function renderDriverSensitivity(state, year) {
+  const rows = scenarioRowsForYear(state, year);
+  const balanceValues = rows.map(({ row }) => row.market_balance_kt);
+  const balanceSpread = Math.max(...balanceValues) - Math.min(...balanceValues);
+  const byId = Object.fromEntries(rows.map((scenario) => [scenario.id, scenario]));
+  const scenarioIds = ["base_case", "bull_case", "bear_case"];
+
+  document.getElementById("driverYearBadge").textContent = `${year}`;
+  document.getElementById("driverSummary").textContent =
+    `The scenario spread at ${year} is ${formatKt(balanceSpread)} kt between the tightest and loosest balances. In this model, demand pressure and primary supply execution create most of that spread.`;
+
+  const driverRows = [
+    {
+      label: "Demand pressure",
+      why: "Combines energy-transition bonus and explicit demand shock.",
+      value: (scenario) => `${formatSignedPct(demandPressure(scenario.config))} per year`,
+    },
+    {
+      label: "Primary supply growth",
+      why: "Mine/refinery growth is the largest supply-side lever.",
+      value: (scenario) => `${formatPct(scenario.row.primary_supply_growth)} per year`,
+    },
+    {
+      label: "Disruption loss",
+      why: "Higher disruption directly reduces primary supply growth.",
+      value: (scenario) => `${formatPct(scenario.config.supply.disruption_loss)} per year`,
+    },
+    {
+      label: "Secondary response",
+      why: "Scrap/recycling can help, but it responds only partly to demand growth.",
+      value: (scenario) => secondaryResponseText(scenario.config),
+    },
+    {
+      label: "Market balance",
+      why: "The final physical surplus or deficit after all demand and supply assumptions.",
+      value: (scenario) => formatBalance(scenario.row.market_balance_kt),
+      className: (scenario) => balanceClass(scenario.row.market_balance_kt),
+    },
+  ];
+
+  document.getElementById("driverRows").innerHTML = driverRows
+    .map((driver) => {
+      const cells = scenarioIds
+        .map((scenarioId) => {
+          const scenario = byId[scenarioId];
+          const tone = driver.className ? driver.className(scenario) : "";
+          return `<td class="${tone}">${driver.value(scenario)}</td>`;
+        })
+        .join("");
+      return `<tr><td>${driver.label}</td>${cells}<td>${driver.why}</td></tr>`;
+    })
+    .join("");
 }
 
 function regionBonusText(config) {
@@ -510,6 +692,9 @@ function render(state) {
 
   document.getElementById("scenarioEyebrow").textContent = scenario.eyebrow;
   renderScenarioOptions(state);
+  renderExecutiveView(state, year);
+  renderScenarioComparison(state, year);
+  renderDriverSensitivity(state, year);
   renderScenarioExplanation(state);
   updateMetrics(selectedForecast);
   renderBalanceChart(forecast, year);
