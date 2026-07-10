@@ -78,6 +78,61 @@
           <div id="mineSupplyChart" class="ranked-bars" role="img" aria-label="Mine supply ranking by country"></div>
         </article>
       </section>
+
+      <section class="panel sources-panel" aria-labelledby="sourcesHeading">
+        <div class="panel-header">
+          <h2 id="sourcesHeading">Data Sources & Assumptions</h2>
+          <span class="badge">Public data + scenario inputs</span>
+        </div>
+        <div class="source-grid">
+          <article class="source-card">
+            <h3>Copper Price</h3>
+            <p>Monthly global copper price in U.S. dollars per metric ton, series <code>PCOPPUSDM</code>.</p>
+            <a href="https://fred.stlouisfed.org/series/PCOPPUSDM" target="_blank" rel="noreferrer">FRED series page</a>
+            <a href="https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCOPPUSDM" target="_blank" rel="noreferrer">CSV endpoint used by fetcher</a>
+          </article>
+
+          <article class="source-card">
+            <h3>Macro Drivers</h3>
+            <p>World Bank indicators for World, China, United States, and European Union. Rest of World is calculated as World minus those regions.</p>
+            <a href="https://data.worldbank.org/indicator/NY.GDP.MKTP.KD" target="_blank" rel="noreferrer">GDP, constant 2015 USD</a>
+            <a href="https://data.worldbank.org/indicator/NV.IND.TOTL.ZS" target="_blank" rel="noreferrer">Industry value added, % of GDP</a>
+            <a href="https://data.worldbank.org/indicator/SP.POP.TOTL" target="_blank" rel="noreferrer">Population, total</a>
+          </article>
+
+          <article class="source-card">
+            <h3>World Bank API Calls</h3>
+            <p>Exact API endpoints used to build <code>data/raw/world_bank_indicators.csv</code>.</p>
+            <a href="https://api.worldbank.org/v2/country/WLD;CHN;USA;EUU/indicator/NY.GDP.MKTP.KD?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">Real GDP API response</a>
+            <a href="https://api.worldbank.org/v2/country/WLD;CHN;USA;EUU/indicator/NV.IND.TOTL.ZS?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">Industry share API response</a>
+            <a href="https://api.worldbank.org/v2/country/WLD;CHN;USA;EUU/indicator/SP.POP.TOTL?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">Population API response</a>
+          </article>
+
+          <article class="source-card">
+            <h3>Mine & Refinery Baseline</h3>
+            <p>USGS Mineral Commodity Summaries 2025 copper table, transcribed into the model seed files.</p>
+            <a href="https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf" target="_blank" rel="noreferrer">USGS Copper PDF</a>
+            <a href="/data/seed/usgs_mcs_2025_country_supply.csv" target="_blank" rel="noreferrer">Local transcribed country table</a>
+            <a href="/data/seed/usgs_mcs_2025_global_balance.csv" target="_blank" rel="noreferrer">Local global seed table</a>
+          </article>
+
+          <article class="source-card">
+            <h3>Scenario Assumptions</h3>
+            <p>Demand shares, growth weights, supply-growth rules, inventory assumptions, and price-stress parameters.</p>
+            <a href="/config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
+            <a href="/copper_model/model.py" target="_blank" rel="noreferrer">Forecast model code</a>
+            <a href="/copper_model/sources.py" target="_blank" rel="noreferrer">Data fetcher code</a>
+          </article>
+
+          <article class="source-card">
+            <h3>Dashboard Data Files</h3>
+            <p>The dashboard reads these generated CSV files directly.</p>
+            <a href="/outputs/base_case_forecast.csv" target="_blank" rel="noreferrer">Global forecast CSV</a>
+            <a href="/outputs/base_case_regional_demand.csv" target="_blank" rel="noreferrer">Regional demand CSV</a>
+            <a href="/outputs/base_case_mine_supply_by_country.csv" target="_blank" rel="noreferrer">Mine supply CSV</a>
+          </article>
+        </div>
+      </section>
     </main>
 
     <script src="./app.js"></script>
