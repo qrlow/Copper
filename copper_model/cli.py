@@ -30,9 +30,9 @@ def forecast_command(args: argparse.Namespace) -> int:
     latest = outputs.forecast.iloc[-1]
     print(
         "final year "
-        f"{int(latest['year'])}: balance={latest['market_balance_kt']:.0f} kt, "
-        f"cover={latest['inventory_cover_days']:.1f} days, "
-        f"price=${latest['implied_price_usd_per_t']:.0f}/t"
+        f"{int(latest['year'])}: demand={latest['demand_kt']:.0f} kt, "
+        f"supply={latest['refined_supply_kt']:.0f} kt, "
+        f"balance={latest['market_balance_kt']:.0f} kt"
     )
     return 0
 

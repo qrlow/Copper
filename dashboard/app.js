@@ -9,13 +9,13 @@ const SCENARIOS = [
     id: "bull_case",
     label: "Bull",
     eyebrow: "Bull Case",
-    description: "Higher electrification demand, tighter supply, lower scrap response, and lower starting stocks.",
+    description: "Higher electrification demand, tighter supply, and lower scrap response.",
   },
   {
     id: "bear_case",
     label: "Bear",
     eyebrow: "Bear Case",
-    description: "Softer demand, stronger supply additions, higher scrap response, and higher starting stocks.",
+    description: "Softer demand, stronger supply additions, and higher scrap response.",
   },
 ];
 
@@ -96,10 +96,6 @@ function formatKt(value) {
 function formatSignedKt(value) {
   const rounded = Math.round(value);
   return `${rounded > 0 ? "+" : ""}${rounded.toLocaleString()}`;
-}
-
-function formatUsd(value) {
-  return `$${Math.round(value).toLocaleString()}`;
 }
 
 function extent(values) {
@@ -276,30 +272,21 @@ function updateMetrics(row) {
   document.getElementById("metricDemand").textContent = formatKt(row.demand_kt);
   document.getElementById("metricSupply").textContent = formatKt(row.refined_supply_kt);
   document.getElementById("metricBalance").textContent = formatSignedKt(row.market_balance_kt);
-  document.getElementById("metricStocks").textContent = formatKt(row.ending_stocks_kt);
-  document.getElementById("metricCover").textContent = `${row.inventory_cover_days.toFixed(1)}`;
-  document.getElementById("metricPrice").textContent = formatUsd(row.implied_price_usd_per_t);
-  document.getElementById("coverBadge").textContent = `${row.inventory_cover_days.toFixed(1)} days cover`;
+  document.getElementById("balanceBadge").textContent = `${formatSignedKt(row.market_balance_kt)} kt`;
 }
 
-function renderScenarioButtons(state) {
-  const container = document.getElementById("scenarioButtons");
-  container.innerHTML = "";
-
-  SCENARIOS.forEach((scenario) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `segment-button${state.selectedScenarioId === scenario.id ? " is-active" : ""}`;
-    button.textContent = scenario.label;
-    button.setAttribute("role", "tab");
-    button.setAttribute("aria-selected", state.selectedScenarioId === scenario.id ? "true" : "false");
-    button.title = scenario.description;
-    button.addEventListener("click", () => {
-      state.selectedScenarioId = scenario.id;
-      render(state);
+function renderScenarioOptions(state) {
+  const select = document.getElementById("scenarioSelect");
+  if (select.options.length === 0) {
+    SCENARIOS.forEach((scenario) => {
+      const option = document.createElement("option");
+      option.value = scenario.id;
+      option.textContent = scenario.label;
+      option.title = scenario.description;
+      select.appendChild(option);
     });
-    container.appendChild(button);
-  });
+  }
+  select.value = state.selectedScenarioId;
 }
 
 function syncYearRange(forecast) {
@@ -326,7 +313,7 @@ function render(state) {
   const selectedMine = mine.filter((row) => row.year === year);
 
   document.getElementById("scenarioEyebrow").textContent = scenario.eyebrow;
-  renderScenarioButtons(state);
+  renderScenarioOptions(state);
   updateMetrics(selectedForecast);
   renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
@@ -359,6 +346,11 @@ async function init() {
     scenarios: Object.fromEntries(scenarioEntries),
     selectedScenarioId: "base_case",
   };
+  const scenarioSelect = document.getElementById("scenarioSelect");
+  scenarioSelect.addEventListener("change", () => {
+    state.selectedScenarioId = scenarioSelect.value;
+    render(state);
+  });
   const yearRange = document.getElementById("yearRange");
   yearRange.addEventListener("input", () => render(state));
   window.addEventListener("resize", () => render(state));

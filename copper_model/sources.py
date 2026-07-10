@@ -10,7 +10,6 @@ from typing import Mapping
 import pandas as pd
 import requests
 
-FRED_COPPER_PRICE_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCOPPUSDM"
 WORLD_BANK_ENDPOINT = (
     "https://api.worldbank.org/v2/country/{country}/indicator/{indicator}"
 )
@@ -48,28 +47,6 @@ def _get_json(url: str, params: Mapping[str, object]) -> object:
             if attempt < 2:
                 time.sleep(2 * (attempt + 1))
     raise RuntimeError(f"Request failed after retries: {url}") from last_error
-
-
-def fetch_fred_copper_price(output_path: Path) -> FetchResult:
-    """Fetch monthly IMF/FRED copper prices."""
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    price = pd.read_csv(FRED_COPPER_PRICE_CSV)
-    price = price.rename(
-        columns={
-            "DATE": "date",
-            "observation_date": "date",
-            "PCOPPUSDM": "price_usd_per_t",
-        }
-    )
-    missing = {"date", "price_usd_per_t"} - set(price.columns)
-    if missing:
-        raise ValueError(f"FRED response missing columns: {sorted(missing)}")
-    price["date"] = pd.to_datetime(price["date"], errors="coerce")
-    price["price_usd_per_t"] = pd.to_numeric(price["price_usd_per_t"], errors="coerce")
-    price = price.dropna(subset=["date", "price_usd_per_t"])
-    price.to_csv(output_path, index=False)
-    return FetchResult("fred_copper_price", len(price), output_path)
 
 
 def fetch_world_bank_indicators(output_path: Path) -> FetchResult:
@@ -113,6 +90,5 @@ def fetch_all(data_dir: Path) -> list[FetchResult]:
 
     raw_dir = data_dir / "raw"
     return [
-        fetch_fred_copper_price(raw_dir / "copper_price_fred.csv"),
         fetch_world_bank_indicators(raw_dir / "world_bank_indicators.csv"),
     ]

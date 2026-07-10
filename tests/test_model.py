@@ -52,13 +52,7 @@ def test_estimate_regional_demand_growth_includes_rest_of_world():
 
 def test_run_model_produces_full_forecast():
     config = load_config(Path("config/base_case.json"))
-    prices = pd.DataFrame(
-        {
-            "date": pd.to_datetime(["2024-01-01", "2024-02-01"]),
-            "price_usd_per_t": [9000.0, 9500.0],
-        }
-    )
-    outputs = run_model(config, Path("data"), prices=prices, macro=_macro_rows())
+    outputs = run_model(config, Path("data"), macro=_macro_rows())
 
     assert outputs.forecast["year"].min() == 2024
     assert outputs.forecast["year"].max() == 2035
@@ -70,17 +64,12 @@ def test_run_model_produces_full_forecast():
 
 
 def test_all_dashboard_scenarios_run():
-    prices = pd.DataFrame(
-        {
-            "date": pd.to_datetime(["2024-01-01", "2024-02-01"]),
-            "price_usd_per_t": [9000.0, 9500.0],
-        }
-    )
-
     for scenario_name in ["base_case", "bull_case", "bear_case"]:
         config = load_config(Path("config") / f"{scenario_name}.json")
-        outputs = run_model(config, Path("data"), prices=prices, macro=_macro_rows())
+        outputs = run_model(config, Path("data"), macro=_macro_rows())
 
         assert outputs.forecast["scenario"].eq(scenario_name).all()
         assert outputs.forecast["year"].max() == 2035
         assert outputs.forecast["market_balance_kt"].notna().all()
+        assert "ending_stocks_kt" not in outputs.forecast.columns
+        assert "implied_price_usd_per_t" not in outputs.forecast.columns

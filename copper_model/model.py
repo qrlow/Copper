@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,33 +28,11 @@ def load_config(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
-def load_public_data(data_dir: Path) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+def load_public_data(data_dir: Path) -> pd.DataFrame | None:
     raw_dir = data_dir / "raw"
-    price_path = raw_dir / "copper_price_fred.csv"
     macro_path = raw_dir / "world_bank_indicators.csv"
 
-    prices = pd.read_csv(price_path, parse_dates=["date"]) if price_path.exists() else None
-    macro = pd.read_csv(macro_path) if macro_path.exists() else None
-    return prices, macro
-
-
-def annual_copper_price(prices: pd.DataFrame | None) -> pd.DataFrame:
-    if prices is None or prices.empty:
-        return pd.DataFrame(columns=["year", "price_usd_per_t"])
-    data = prices.copy()
-    data["year"] = data["date"].dt.year
-    return (
-        data.groupby("year", as_index=False)["price_usd_per_t"]
-        .mean()
-        .sort_values("year")
-    )
-
-
-def latest_price(prices: pd.DataFrame | None, fallback: float) -> float:
-    annual = annual_copper_price(prices)
-    if annual.empty:
-        return fallback
-    return float(annual.iloc[-1]["price_usd_per_t"])
+    return pd.read_csv(macro_path) if macro_path.exists() else None
 
 
 def _cagr(start: float, end: float, periods: int) -> float:
@@ -194,49 +171,13 @@ def _recent_supply_growth(seed_global: pd.DataFrame, config: dict[str, Any]) -> 
     )
 
 
-def _price_incentive(last_price: float, config: dict[str, Any]) -> float:
-    supply_config = config["supply"]
-    threshold = float(supply_config["price_incentive_threshold_usd_per_t"])
-    if last_price <= threshold:
-        return 0.0
-    incentive = float(supply_config["price_incentive_elasticity"]) * math.log(
-        last_price / threshold
-    )
-    return _clip(incentive, 0.0, float(supply_config["price_incentive_cap"]))
-
-
-def _project_price(
-    previous_price: float,
-    balance_kt: float,
-    demand_kt: float,
-    cover_days: float,
-    config: dict[str, Any],
-) -> float:
-    price_config = config["price"]
-    target_cover = float(config["inventories"]["target_cover_days"])
-    balance_tightness = -balance_kt / max(demand_kt, 1.0)
-    inventory_tightness = (target_cover - cover_days) / max(target_cover, 1.0)
-    annual_change = (
-        float(price_config["balance_beta"]) * balance_tightness
-        + float(price_config["inventory_beta"]) * inventory_tightness
-    )
-    annual_change = _clip(
-        annual_change,
-        float(price_config["annual_change_floor"]),
-        float(price_config["annual_change_cap"]),
-    )
-    price = previous_price * (1 + annual_change)
-    return max(price, float(price_config["price_floor_usd_per_t"]))
-
-
 def run_model(
     config: dict[str, Any],
     data_dir: Path,
-    prices: pd.DataFrame | None = None,
     macro: pd.DataFrame | None = None,
 ) -> ModelOutputs:
-    if prices is None and macro is None:
-        prices, macro = load_public_data(data_dir)
+    if macro is None:
+        macro = load_public_data(data_dir)
 
     seed_global = pd.read_csv(data_dir / "seed" / "usgs_mcs_2025_global_balance.csv")
     seed_country = pd.read_csv(data_dir / "seed" / "usgs_mcs_2025_country_supply.csv")
@@ -244,7 +185,6 @@ def run_model(
     base_year = int(config["base_year"])
     end_year = int(config["forecast_end_year"])
     years = list(range(base_year, end_year + 1))
-    last_price = latest_price(prices, float(config["price"]["fallback_2024_usd_per_t"]))
 
     regional_growth = estimate_regional_demand_growth(config, macro)
     demand_config = config["demand"]
@@ -252,11 +192,9 @@ def run_model(
     secondary_config = config["secondary_supply"]
 
     recent_supply_growth = _recent_supply_growth(seed_global, config)
-    incentive = _price_incentive(last_price, config)
     primary_growth = (
         recent_supply_growth
         + float(supply_config["project_pipeline_growth"])
-        + incentive
         - float(supply_config["disruption_loss"])
     )
 
@@ -273,11 +211,9 @@ def run_model(
     )
     secondary_refined = float(supply_config["refinery_production_kt"]) - primary_refined
     mine_supply = float(supply_config["mine_production_kt"])
-    stocks = float(config["inventories"]["opening_stocks_kt"])
-    uncovered_deficit = 0.0
-    price = last_price
 
     for year in years:
+        secondary_growth = 0.0
         if year > base_year:
             for region in demand_by_region:
                 demand_by_region[region] *= 1 + float(growth_by_region[region])
@@ -291,7 +227,6 @@ def run_model(
             secondary_growth = (
                 float(secondary_config["demand_link"]) * float(global_demand_growth)
                 + float(secondary_config["collection_growth"])
-                + float(secondary_config["price_incentive_link"]) * incentive
             )
             secondary_growth = _clip(
                 secondary_growth,
@@ -314,15 +249,6 @@ def run_model(
         demand = sum(demand_by_region.values())
         refined_supply = primary_refined + secondary_refined
         balance = refined_supply - demand
-        stock_change = balance
-        stocks += balance
-        if stocks < 0:
-            uncovered_deficit += abs(stocks)
-            stock_change = balance - stocks
-            stocks = 0.0
-        cover_days = stocks / max(demand / 365, 1.0)
-        if year > base_year:
-            price = _project_price(price, balance, demand, cover_days, config)
 
         global_rows.append(
             {
@@ -334,13 +260,8 @@ def run_model(
                 "secondary_refined_supply_kt": secondary_refined,
                 "refined_supply_kt": refined_supply,
                 "market_balance_kt": balance,
-                "stock_change_kt": stock_change,
-                "ending_stocks_kt": stocks,
-                "cumulative_uncovered_deficit_kt": uncovered_deficit,
-                "inventory_cover_days": cover_days,
-                "implied_price_usd_per_t": price,
                 "primary_supply_growth": primary_growth,
-                "price_incentive_growth": incentive,
+                "secondary_supply_growth": secondary_growth,
             }
         )
 

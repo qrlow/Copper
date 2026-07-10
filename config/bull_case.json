@@ -43,28 +43,12 @@
     "recent_growth_floor": -0.015,
     "recent_growth_cap": 0.025,
     "project_pipeline_growth": 0.003,
-    "disruption_loss": 0.007,
-    "price_incentive_threshold_usd_per_t": 10500.0,
-    "price_incentive_elasticity": 0.08,
-    "price_incentive_cap": 0.008
+    "disruption_loss": 0.007
   },
   "secondary_supply": {
     "collection_growth": 0.002,
     "demand_link": 0.45,
-    "price_incentive_link": 0.18,
     "growth_floor": -0.03,
     "growth_cap": 0.05
-  },
-  "inventories": {
-    "opening_stocks_kt": 500.0,
-    "target_cover_days": 28.0
-  },
-  "price": {
-    "fallback_2024_usd_per_t": 9200.0,
-    "balance_beta": 2.7,
-    "inventory_beta": 0.10,
-    "annual_change_floor": -0.20,
-    "annual_change_cap": 0.22,
-    "price_floor_usd_per_t": 3500.0
   }
 }

@@ -74,7 +74,7 @@ h2 {
 
 .topbar-actions {
   display: grid;
-  grid-template-columns: minmax(218px, auto) auto minmax(220px, 320px);
+  grid-template-columns: minmax(190px, 240px) auto minmax(220px, 320px);
   align-items: center;
   gap: 16px;
   min-width: min(700px, 100%);
@@ -97,36 +97,21 @@ h2 {
   font-size: 24px;
 }
 
-.segmented-control {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.scenario-control select {
   width: 100%;
   min-height: 40px;
-  padding: 3px;
+  padding: 0 36px 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-2);
-}
-
-.segment-button {
-  min-width: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
+  background: var(--surface);
+  color: var(--ink);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
+  cursor: pointer;
 }
 
-.segment-button.is-active {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgba(32, 33, 36, 0.14);
-}
-
-.segment-button:focus-visible {
+.scenario-control select:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
 }
@@ -138,7 +123,7 @@ input[type="range"] {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin: 20px 0;
 }
@@ -413,10 +398,6 @@ input[type="range"] {
   .metrics,
   .content-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .source-grid {

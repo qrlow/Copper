@@ -43,20 +43,7 @@ def plot_balance(forecast_path: Path, output_path: Path) -> Path:
     ax2.axhline(0, color="#333333", linewidth=1)
     ax2.set_ylabel("Balance, kt")
     ax2.grid(True, axis="y", alpha=0.25)
-
-    price_axis = ax2.twinx()
-    price_axis.plot(
-        forecast["year"],
-        forecast["implied_price_usd_per_t"],
-        label="Implied price",
-        color="#b85b5b",
-        linewidth=2,
-    )
-    price_axis.set_ylabel("USD per metric ton")
-
-    lines, labels = ax2.get_legend_handles_labels()
-    price_lines, price_labels = price_axis.get_legend_handles_labels()
-    ax2.legend(lines + price_lines, labels + price_labels, loc="upper left")
+    ax2.legend(loc="upper left")
     ax2.set_xlabel("Year")
 
     fig.tight_layout()
