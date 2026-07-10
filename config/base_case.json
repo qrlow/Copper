@@ -1,0 +1,70 @@
+{
+  "scenario_name": "base_case",
+  "base_year": 2024,
+  "forecast_end_year": 2035,
+  "demand": {
+    "global_refined_demand_kt": 27000.0,
+    "regions": {
+      "China": {
+        "world_bank_code": "CHN",
+        "share": 0.55,
+        "transition_growth_bonus": 0.006
+      },
+      "United States": {
+        "world_bank_code": "USA",
+        "share": 0.07,
+        "transition_growth_bonus": 0.005
+      },
+      "European Union": {
+        "world_bank_code": "EUU",
+        "share": 0.12,
+        "transition_growth_bonus": 0.005
+      },
+      "Rest of World": {
+        "world_bank_code": "ROW",
+        "share": 0.26,
+        "transition_growth_bonus": 0.004
+      }
+    },
+    "driver_weights": {
+      "industry_value_added": 0.55,
+      "gdp_per_capita": 0.30,
+      "population": 0.15
+    },
+    "macro_lookback_years": 10,
+    "growth_floor": -0.015,
+    "growth_cap": 0.055,
+    "scenario_growth_shock": 0.0
+  },
+  "supply": {
+    "mine_production_kt": 23000.0,
+    "refinery_production_kt": 27000.0,
+    "primary_refined_share": 0.82,
+    "recent_growth_floor": -0.01,
+    "recent_growth_cap": 0.03,
+    "project_pipeline_growth": 0.006,
+    "disruption_loss": 0.003,
+    "price_incentive_threshold_usd_per_t": 10000.0,
+    "price_incentive_elasticity": 0.10,
+    "price_incentive_cap": 0.012
+  },
+  "secondary_supply": {
+    "collection_growth": 0.004,
+    "demand_link": 0.55,
+    "price_incentive_link": 0.25,
+    "growth_floor": -0.02,
+    "growth_cap": 0.06
+  },
+  "inventories": {
+    "opening_stocks_kt": 650.0,
+    "target_cover_days": 25.0
+  },
+  "price": {
+    "fallback_2024_usd_per_t": 9200.0,
+    "balance_beta": 2.2,
+    "inventory_beta": 0.08,
+    "annual_change_floor": -0.20,
+    "annual_change_cap": 0.18,
+    "price_floor_usd_per_t": 3500.0
+  }
+}

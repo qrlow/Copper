@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "copper-sd-model"
+version = "0.1.0"
+description = "Global copper supply-demand model using public data sources"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "matplotlib>=3.7",
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "requests>=2.31"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[project.scripts]
+copper-model = "copper_model.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["copper_model*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
