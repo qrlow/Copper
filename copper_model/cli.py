@@ -37,6 +37,17 @@ def forecast_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def forecast_all_command(args: argparse.Namespace) -> int:
+    for config_path in args.config:
+        config = load_config(config_path)
+        outputs = run_model(config, args.data_dir)
+        paths = write_outputs(outputs, args.output_dir, config["scenario_name"])
+        print(f"scenario {config['scenario_name']}")
+        for path in paths:
+            print(f"  wrote {path}")
+    return 0
+
+
 def plot_command(args: argparse.Namespace) -> int:
     from copper_model.plotting import plot_balance
 
@@ -64,6 +75,23 @@ def build_parser() -> argparse.ArgumentParser:
     forecast.add_argument("--data-dir", type=Path, default=root / "data")
     forecast.add_argument("--output-dir", type=Path, default=root / "outputs")
     forecast.set_defaults(func=forecast_command)
+
+    forecast_all = subparsers.add_parser(
+        "forecast-all", help="Run all dashboard scenario forecasts"
+    )
+    forecast_all.add_argument(
+        "--config",
+        type=Path,
+        nargs="+",
+        default=[
+            root / "config" / "base_case.json",
+            root / "config" / "bull_case.json",
+            root / "config" / "bear_case.json",
+        ],
+    )
+    forecast_all.add_argument("--data-dir", type=Path, default=root / "data")
+    forecast_all.add_argument("--output-dir", type=Path, default=root / "outputs")
+    forecast_all.set_defaults(func=forecast_all_command)
 
     plot = subparsers.add_parser("plot", help="Plot a forecast CSV")
     plot.add_argument(

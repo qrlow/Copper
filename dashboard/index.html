@@ -10,10 +10,14 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Base Case</p>
+          <p id="scenarioEyebrow" class="eyebrow">Base Case</p>
           <h1>Copper Supply-Demand Dashboard</h1>
         </div>
         <div class="topbar-actions">
+          <div class="scenario-control">
+            <span>Scenario</span>
+            <div id="scenarioButtons" class="segmented-control" role="tablist" aria-label="Scenario"></div>
+          </div>
           <label class="year-control" for="yearRange">
             <span>Year</span>
             <strong id="selectedYearLabel">2035</strong>
@@ -120,6 +124,8 @@
             <h3>Scenario Assumptions</h3>
             <p>Demand shares, growth weights, supply-growth rules, inventory assumptions, and price-stress parameters.</p>
             <a href="/config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
+            <a href="/config/bull_case.json" target="_blank" rel="noreferrer">Bull-case assumptions JSON</a>
+            <a href="/config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>
             <a href="/copper_model/model.py" target="_blank" rel="noreferrer">Forecast model code</a>
             <a href="/copper_model/sources.py" target="_blank" rel="noreferrer">Data fetcher code</a>
           </article>
@@ -130,6 +136,8 @@
             <a href="/outputs/base_case_forecast.csv" target="_blank" rel="noreferrer">Global forecast CSV</a>
             <a href="/outputs/base_case_regional_demand.csv" target="_blank" rel="noreferrer">Regional demand CSV</a>
             <a href="/outputs/base_case_mine_supply_by_country.csv" target="_blank" rel="noreferrer">Mine supply CSV</a>
+            <a href="/outputs/bull_case_forecast.csv" target="_blank" rel="noreferrer">Bull forecast CSV</a>
+            <a href="/outputs/bear_case_forecast.csv" target="_blank" rel="noreferrer">Bear forecast CSV</a>
           </article>
         </div>
       </section>

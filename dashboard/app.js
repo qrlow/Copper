@@ -1,8 +1,31 @@
-const DATASETS = {
-  forecast: "/outputs/base_case_forecast.csv",
-  regional: "/outputs/base_case_regional_demand.csv",
-  mine: "/outputs/base_case_mine_supply_by_country.csv",
-};
+const SCENARIOS = [
+  {
+    id: "base_case",
+    label: "Base",
+    eyebrow: "Base Case",
+    description: "Current public macro trend with moderate transition demand and supply additions.",
+  },
+  {
+    id: "bull_case",
+    label: "Bull",
+    eyebrow: "Bull Case",
+    description: "Higher electrification demand, tighter supply, lower scrap response, and lower starting stocks.",
+  },
+  {
+    id: "bear_case",
+    label: "Bear",
+    eyebrow: "Bear Case",
+    description: "Softer demand, stronger supply additions, higher scrap response, and higher starting stocks.",
+  },
+];
+
+function scenarioFiles(id) {
+  return {
+    forecast: `/outputs/${id}_forecast.csv`,
+    regional: `/outputs/${id}_regional_demand.csv`,
+    mine: `/outputs/${id}_mine_supply_by_country.csv`,
+  };
+}
 
 const colors = {
   copper: "#b65f2a",
@@ -257,14 +280,53 @@ function updateMetrics(row) {
   document.getElementById("coverBadge").textContent = `${row.inventory_cover_days.toFixed(1)} days cover`;
 }
 
-function render(state) {
-  const year = Number(document.getElementById("yearRange").value);
-  const selectedForecast = state.forecast.find((row) => row.year === year);
-  const selectedRegional = state.regional.filter((row) => row.year === year);
-  const selectedMine = state.mine.filter((row) => row.year === year);
+function renderScenarioButtons(state) {
+  const container = document.getElementById("scenarioButtons");
+  container.innerHTML = "";
 
+  SCENARIOS.forEach((scenario) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `segment-button${state.selectedScenarioId === scenario.id ? " is-active" : ""}`;
+    button.textContent = scenario.label;
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", state.selectedScenarioId === scenario.id ? "true" : "false");
+    button.title = scenario.description;
+    button.addEventListener("click", () => {
+      state.selectedScenarioId = scenario.id;
+      render(state);
+    });
+    container.appendChild(button);
+  });
+}
+
+function syncYearRange(forecast) {
+  const years = forecast.map((row) => row.year);
+  const yearRange = document.getElementById("yearRange");
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  const currentYear = Number(yearRange.value);
+
+  yearRange.min = minYear;
+  yearRange.max = maxYear;
+  if (!Number.isFinite(currentYear) || currentYear < minYear || currentYear > maxYear) {
+    yearRange.value = maxYear;
+  }
+}
+
+function render(state) {
+  const scenario = state.scenarios[state.selectedScenarioId];
+  const { forecast, regional, mine } = scenario;
+  syncYearRange(forecast);
+  const year = Number(document.getElementById("yearRange").value);
+  const selectedForecast = forecast.find((row) => row.year === year);
+  const selectedRegional = regional.filter((row) => row.year === year);
+  const selectedMine = mine.filter((row) => row.year === year);
+
+  document.getElementById("scenarioEyebrow").textContent = scenario.eyebrow;
+  renderScenarioButtons(state);
   updateMetrics(selectedForecast);
-  renderBalanceChart(state.forecast, year);
+  renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
   renderRegionalDemand(selectedRegional);
   renderMineSupply(selectedMine);
@@ -279,19 +341,23 @@ async function loadDataset(url) {
 }
 
 async function init() {
-  const [forecast, regional, mine] = await Promise.all([
-    loadDataset(DATASETS.forecast),
-    loadDataset(DATASETS.regional),
-    loadDataset(DATASETS.mine),
-  ]);
+  const scenarioEntries = await Promise.all(
+    SCENARIOS.map(async (scenario) => {
+      const files = scenarioFiles(scenario.id);
+      const [forecast, regional, mine] = await Promise.all([
+        loadDataset(files.forecast),
+        loadDataset(files.regional),
+        loadDataset(files.mine),
+      ]);
+      return [scenario.id, { ...scenario, files, forecast, regional, mine }];
+    }),
+  );
 
-  const years = forecast.map((row) => row.year);
+  const state = {
+    scenarios: Object.fromEntries(scenarioEntries),
+    selectedScenarioId: "base_case",
+  };
   const yearRange = document.getElementById("yearRange");
-  yearRange.min = Math.min(...years);
-  yearRange.max = Math.max(...years);
-  yearRange.value = Math.max(...years);
-
-  const state = { forecast, regional, mine };
   yearRange.addEventListener("input", () => render(state));
   window.addEventListener("resize", () => render(state));
   render(state);

@@ -15,7 +15,7 @@ This is a transparent planning model, not a trading model. It is built to make a
 ```bash
 python3 -m pip install -e ".[dev]"
 python3 -m copper_model fetch
-python3 -m copper_model forecast
+python3 -m copper_model forecast-all
 python3 -m copper_model plot
 python3 -m http.server 8000
 ```
@@ -28,6 +28,7 @@ Outputs are written to `outputs/`:
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
 - `base_case_balance.png`: chart of demand, supply, balance, and implied price.
+- `bull_case_*` and `bear_case_*`: higher-tightness and lower-tightness scenario outputs for the dashboard.
 
 The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`.
 
@@ -60,7 +61,7 @@ Supply is split into primary and secondary refined copper:
 
 ## Configuration
 
-Edit `config/base_case.json` to change:
+Edit `config/base_case.json`, `config/bull_case.json`, or `config/bear_case.json` to change:
 
 - forecast horizon;
 - 2024 demand and inventory assumptions;
@@ -68,6 +69,12 @@ Edit `config/base_case.json` to change:
 - mine/refinery growth assumptions;
 - scrap share, collection growth, and price elasticity;
 - price response to deficits and inventory cover.
+
+Scenario framing:
+
+- Base case: public macro trend with moderate transition demand and supply additions.
+- Bull case: higher electrification demand, tighter supply, lower scrap response, and lower starting inventories.
+- Bear case: softer demand, stronger supply additions, higher scrap response, and higher starting inventories.
 
 ## Data Sources
 

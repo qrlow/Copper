@@ -74,12 +74,13 @@ h2 {
 
 .topbar-actions {
   display: grid;
-  grid-template-columns: auto minmax(220px, 320px);
+  grid-template-columns: minmax(218px, auto) auto minmax(220px, 320px);
   align-items: center;
   gap: 16px;
-  min-width: min(420px, 100%);
+  min-width: min(700px, 100%);
 }
 
+.scenario-control,
 .year-control {
   display: grid;
   gap: 2px;
@@ -87,9 +88,47 @@ h2 {
   font-size: 12px;
 }
 
+.scenario-control {
+  gap: 8px;
+}
+
 .year-control strong {
   color: var(--ink);
   font-size: 24px;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-height: 40px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.segment-button {
+  min-width: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.segment-button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(32, 33, 36, 0.14);
+}
+
+.segment-button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 input[type="range"] {
@@ -360,7 +399,7 @@ input[type="range"] {
   }
 
   .topbar-actions {
-    grid-template-columns: 84px minmax(0, 1fr);
+    grid-template-columns: 1fr;
     width: 100%;
   }
 

@@ -67,3 +67,20 @@ def test_run_model_produces_full_forecast():
     )
     assert not outputs.regional_demand.empty
     assert not outputs.mine_supply_by_country.empty
+
+
+def test_all_dashboard_scenarios_run():
+    prices = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2024-01-01", "2024-02-01"]),
+            "price_usd_per_t": [9000.0, 9500.0],
+        }
+    )
+
+    for scenario_name in ["base_case", "bull_case", "bear_case"]:
+        config = load_config(Path("config") / f"{scenario_name}.json")
+        outputs = run_model(config, Path("data"), prices=prices, macro=_macro_rows())
+
+        assert outputs.forecast["scenario"].eq(scenario_name).all()
+        assert outputs.forecast["year"].max() == 2035
+        assert outputs.forecast["market_balance_kt"].notna().all()
