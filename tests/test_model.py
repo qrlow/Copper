@@ -9,6 +9,7 @@ from copper_model.model import (
     load_config,
     run_model,
 )
+from copper_model.regression import estimate_driver_weights, prepare_regression_dataset
 
 
 def _macro_rows() -> pd.DataFrame:
@@ -137,3 +138,27 @@ def test_all_dashboard_scenarios_run():
         assert outputs.forecast["market_balance_kt"].notna().all()
         assert "ending_stocks_kt" not in outputs.forecast.columns
         assert "implied_price_usd_per_t" not in outputs.forecast.columns
+
+
+def test_regression_dataset_uses_public_history():
+    dataset = prepare_regression_dataset(Path("data"))
+
+    assert dataset["year"].min() == 1992
+    assert dataset["year"].max() == 2024
+    assert len(dataset) == 33
+    assert {
+        "refined_usage_growth",
+        "industry_activity_growth",
+        "gdp_per_capita_growth",
+        "population_growth",
+    }.issubset(dataset.columns)
+
+
+def test_regression_weights_are_normalized():
+    outputs = estimate_driver_weights(Path("data"))
+    weights = outputs.weights
+
+    assert round(sum(weights.values()), 6) == 1.0
+    assert round(weights["industry_value_added"], 3) == 0.383
+    assert round(weights["gdp_per_capita"], 3) == 0.302
+    assert round(weights["population"], 3) == 0.315

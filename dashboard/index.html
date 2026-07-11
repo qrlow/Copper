@@ -220,6 +220,7 @@
         <div class="explanation-copy">
           <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, USGS MCS 2026 2024 world mine/refinery supply, and World Bank macro drivers.</p>
           <p>The World Bank macro growth rates are fixed historical lookback rates applied across the forecast horizon; they are not rolling future forecasts.</p>
+          <p>The demand-driver weights are regression-calibrated from annual ICSG refined-usage growth and World Bank macro growth. The regression fit is modest, so the dashboard treats the result as calibration evidence, not a precise law.</p>
           <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
           <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
         </div>
@@ -256,8 +257,9 @@
 
           <article class="source-card">
             <h3>ICSG Market Context</h3>
-            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, and scrap/recycling context.</p>
+            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, scrap/recycling context, and historical world refined usage for the demand-driver regression.</p>
             <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
+            <a href="../data/seed/icsg_world_copper_balance_1960_2024.csv" target="_blank" rel="noreferrer">Local historical balance seed</a>
           </article>
 
           <article class="source-card">
@@ -275,6 +277,14 @@
           </article>
 
           <article class="source-card">
+            <h3>Demand Weight Regression</h3>
+            <p>Annual OLS regression of ICSG world refined usage growth on World Bank industry-activity, GDP-per-capita, and population growth. Model weights use LMG relative R-squared shares: 38.3%, 30.2%, and 31.5%. Fit is modest at R-squared 0.178.</p>
+            <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
+            <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
+            <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
+          </article>
+
+          <article class="source-card">
             <h3>Mine & Refinery Baseline</h3>
             <p>USGS Mineral Commodity Summaries 2026 gives the updated 2024 world mine/refinery baseline: 23,000 kt mine production and 27,600 kt refinery production. The country table remains the local transcribed MCS 2025 seed.</p>
             <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf" target="_blank" rel="noreferrer">USGS MCS 2026 PDF</a>
@@ -285,11 +295,15 @@
 
           <article class="source-card">
             <h3>Scenario Assumptions</h3>
-            <p>Growth weights, supply-growth rules, and scenario stress knobs. The base-case 83%/17% primary/secondary split follows the ICSG 2024 refined-production split after grouping SX-EW with primary supply; bull and bear move around it.</p>
+            <p>Demand driver weights, supply-growth rules, and scenario stress knobs. Driver weights come from the regression summary; the base-case 83%/17% primary/secondary split follows the ICSG 2024 refined-production split after grouping SX-EW with primary supply.</p>
             <a href="../config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
             <a href="../config/bull_case.json" target="_blank" rel="noreferrer">Bull-case assumptions JSON</a>
             <a href="../config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>
+            <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
+            <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
+            <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
             <a href="../copper_model/model.py" target="_blank" rel="noreferrer">Forecast model code</a>
+            <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
             <a href="../copper_model/sources.py" target="_blank" rel="noreferrer">Data fetcher code</a>
           </article>
 
@@ -306,6 +320,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-driver-breakdowns"></script>
+    <script src="./app.js?v=2026-07-11-regression-weights"></script>
   </body>
 </html>

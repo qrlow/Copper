@@ -16,6 +16,7 @@ This is a transparent planning model, not a trading model. It is built to make a
 ```bash
 python3 -m pip install -e ".[dev]"
 python3 -m copper_model fetch
+python3 -m copper_model estimate-weights
 python3 -m copper_model forecast-all
 python3 -m copper_model plot
 python3 -m http.server 8000
@@ -25,6 +26,9 @@ Open `http://127.0.0.1:8000/dashboard/` to view the dashboard.
 
 Outputs are written to `outputs/`:
 
+- `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
+- `demand_driver_regression_summary.csv`: OLS coefficients and model driver weights.
+- `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics.
 - `base_case_forecast.csv`: annual global refined copper balance.
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
@@ -54,6 +58,8 @@ regional demand growth =
 ```
 
 The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
+
+Demand driver weights are regression-calibrated rather than hand-picked. The `estimate-weights` command regresses annual global refined copper usage growth from the ICSG Factbook on World Bank world industry-activity, GDP-per-capita, and population growth. Raw OLS coefficients are not directly usable as bounded model weights, so the model uses each driver's LMG relative contribution to multivariate R-squared. The current annual regression uses 1992-2024 data and recommends 38.3% industry activity, 30.2% GDP per capita, and 31.5% population. The fit is modest, so these weights should be treated as data-informed calibration, not a structural law.
 
 Supply is split into primary and secondary refined copper:
 
@@ -93,6 +99,8 @@ Seed tables in `data/seed/` are manually transcribed from:
   `https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf`
 - U.S. Geological Survey, Mineral Commodity Summaries 2025, Copper:
   `https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf`
+- ICSG World Copper Factbook 2025, Annex "World Copper Production and Refined Copper Usage, 1960-2024":
+  `https://icsg.org/copper-factbook/`
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
 The global seed combines MCS 2025 history for 2023 with the MCS 2026 2024 update. The 2024 refined-supply baseline now uses the USGS MCS 2026 world refinery production figure of 27,600 kt. The country supply seed remains based on the transcribed MCS 2025 country table.

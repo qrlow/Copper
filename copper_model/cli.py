@@ -56,6 +56,26 @@ def plot_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def estimate_weights_command(args: argparse.Namespace) -> int:
+    from copper_model.regression import estimate_driver_weights, write_regression_outputs
+
+    outputs = estimate_driver_weights(args.data_dir, args.window_years)
+    paths = write_regression_outputs(outputs, args.output_dir)
+    for path in paths:
+        print(f"wrote {path}")
+
+    fit = outputs.fit.iloc[0]
+    print(
+        "driver-weight regression "
+        f"{int(fit['sample_start_year'])}-{int(fit['sample_end_year'])}, "
+        f"observations={int(fit['observations'])}, "
+        f"r_squared={fit['r_squared']:.3f}"
+    )
+    for row in outputs.summary.itertuples(index=False):
+        print(f"  {row.model_field}: {row.recommended_weight:.3f}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     root = _default_root()
     parser = argparse.ArgumentParser(
@@ -105,6 +125,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=root / "outputs" / "base_case_balance.png",
     )
     plot.set_defaults(func=plot_command)
+
+    estimate_weights = subparsers.add_parser(
+        "estimate-weights",
+        help="Estimate demand driver weights from public historical data",
+    )
+    estimate_weights.add_argument("--data-dir", type=Path, default=root / "data")
+    estimate_weights.add_argument("--output-dir", type=Path, default=root / "outputs")
+    estimate_weights.add_argument(
+        "--window-years",
+        type=int,
+        default=1,
+        help="Growth window for the regression observations",
+    )
+    estimate_weights.set_defaults(func=estimate_weights_command)
 
     return parser
 

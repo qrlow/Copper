@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-driver-breakdowns";
+const DATA_VERSION = "2026-07-11-regression-weights";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -77,6 +77,10 @@ const sourceUrls = {
   baseConfig: appUrl("config/base_case.json"),
   bullConfig: appUrl("config/bull_case.json"),
   bearConfig: appUrl("config/bear_case.json"),
+  regressionDataset: appUrl("outputs/demand_driver_regression_dataset.csv"),
+  regressionSummary: appUrl("outputs/demand_driver_regression_summary.csv"),
+  regressionFit: appUrl("outputs/demand_driver_regression_fit.csv"),
+  icsgHistoricalBalance: appUrl("data/seed/icsg_world_copper_balance_1960_2024.csv"),
 };
 
 function sourceLink(label, url) {
@@ -791,11 +795,14 @@ function renderScenarioExplanation(state) {
     {
       label: "Demand driver weights",
       source: sourceNote(
-        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights are model judgment, with industry largest because copper use is concentrated in industrial, construction, electrical, and infrastructure activity.",
+        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights come from an annual multivariate regression of ICSG world refined usage growth on those World Bank driver growth rates. Because raw OLS coefficients are not bounded weights, the model uses each driver's LMG relative R-squared share. The fit is modest, so this is data-informed calibration rather than a structural law.",
         [
+          sourceLink("ICSG historical usage", sourceUrls.icsgHistoricalBalance),
           sourceLink("GDP", sourceUrls.worldBankGdp),
           sourceLink("Industry share", sourceUrls.worldBankIndustry),
           sourceLink("Population", sourceUrls.worldBankPopulation),
+          sourceLink("Regression summary", sourceUrls.regressionSummary),
+          sourceLink("Regression fit", sourceUrls.regressionFit),
           ...configLinkItems(),
         ],
       ),
