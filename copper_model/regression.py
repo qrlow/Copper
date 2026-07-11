@@ -433,6 +433,8 @@ def estimate_driver_weights(
         ]
     )
     plot_points = _build_regression_plot_points(
+        data_dir=data_dir,
+        macro=macro,
         dataset=dataset,
         world_gdp_dataset=world_gdp_dataset,
         world_gdp_5y_dataset=world_gdp_5y_dataset,
@@ -518,6 +520,7 @@ def _build_relationship_diagnostics(
         coefficients: dict[str, float],
         r_squared: float,
         method: str,
+        equation: str,
         readthrough: str,
     ) -> None:
         rows.append(
@@ -530,6 +533,7 @@ def _build_relationship_diagnostics(
                 "x_variable": x_variable,
                 "y_variable": y_variable,
                 "method": method,
+                "equation": equation,
                 "coefficient": coefficients[x_variable],
                 "intercept": coefficients["intercept"],
                 "r_squared": r_squared,
@@ -551,6 +555,10 @@ def _build_relationship_diagnostics(
         coefficients=level_coefficients,
         r_squared=level_r_squared,
         method="OLS with intercept on log levels",
+        equation=(
+            "log_refined_usage = intercept + beta * "
+            "log_world_real_gdp + error"
+        ),
         readthrough=(
             "Very strong relationship because both copper use and real GDP trend "
             "up over decades; useful for scale, not proof of annual forecast power."
@@ -565,6 +573,10 @@ def _build_relationship_diagnostics(
         coefficients=world_gdp_coefficients,
         r_squared=world_gdp_r_squared,
         method="OLS with intercept on annual growth rates",
+        equation=(
+            "refined_usage_growth = intercept + beta * "
+            "world_real_gdp_growth + error"
+        ),
         readthrough=(
             "GDP matters, but copper-specific cycles and measurement noise leave "
             "large annual residuals."
@@ -579,6 +591,9 @@ def _build_relationship_diagnostics(
         coefficients=world_gdp_no_intercept_coefficients,
         r_squared=world_gdp_no_intercept_r_squared,
         method="OLS through origin on annual growth rates",
+        equation=(
+            "refined_usage_growth = beta * world_real_gdp_growth + error"
+        ),
         readthrough=(
             "Closest public-data test of the Goldman-style rule: the slope is near "
             "0.9 copper-demand percentage points per 1 GDP percentage point."
@@ -593,6 +608,10 @@ def _build_relationship_diagnostics(
         coefficients=world_gdp_5y_coefficients,
         r_squared=world_gdp_5y_r_squared,
         method="OLS with intercept on overlapping 5-year CAGRs",
+        equation=(
+            "refined_usage_growth = intercept + beta * "
+            "world_real_gdp_growth + error"
+        ),
         readthrough=(
             "Smoothing improves the fit, so the GDP link is clearer over cycles "
             "than in single-year moves."
@@ -607,6 +626,10 @@ def _build_relationship_diagnostics(
         coefficients=world_gdp_change_coefficients,
         r_squared=world_gdp_change_r_squared,
         method="OLS with intercept on changes in annual growth rates",
+        equation=(
+            "refined_usage_growth_change = intercept + beta * "
+            "world_real_gdp_growth_change + error"
+        ),
         readthrough=(
             "Direct slowdown test: changes in GDP growth explain some, but not most, "
             "of changes in copper usage growth."
@@ -624,6 +647,10 @@ def _build_relationship_diagnostics(
         coefficients=pre_coefficients,
         r_squared=pre_r_squared,
         method="OLS with intercept on annual growth rates",
+        equation=(
+            "refined_usage_growth = intercept + beta * "
+            "world_real_gdp_growth + error"
+        ),
         readthrough=(
             "The old industrial-cycle sample has a much stronger fit; this is one "
             "reason a broad GDP rule can look intuitive."
@@ -641,6 +668,10 @@ def _build_relationship_diagnostics(
         coefficients=post_coefficients,
         r_squared=post_r_squared,
         method="OLS with intercept on annual growth rates",
+        equation=(
+            "refined_usage_growth = intercept + beta * "
+            "world_real_gdp_growth + error"
+        ),
         readthrough=(
             "Fit weakens after 1990 as China, sector mix, inventory swings, "
             "substitution, and policy become more important."
@@ -658,6 +689,10 @@ def _build_relationship_diagnostics(
         coefficients=ex_covid_coefficients,
         r_squared=ex_covid_r_squared,
         method="OLS with intercept excluding pandemic/reopening years",
+        equation=(
+            "refined_usage_growth = intercept + beta * "
+            "world_real_gdp_growth + error"
+        ),
         readthrough=(
             "Removing the pandemic/reopening years improves fit materially, showing "
             "that a few copper-specific outliers pull annual R-squared down."
@@ -692,6 +727,10 @@ def _build_relationship_diagnostics(
             "x_variable": "world_real_gdp_growth",
             "y_variable": "refined_usage_growth",
             "method": "OLS with intercept, GDP shifted -2 to +2 years",
+            "equation": (
+                "refined_usage_growth = intercept + beta * "
+                "shifted_world_real_gdp_growth + error"
+            ),
             "coefficient": float(best_lag["coefficient"]),
             "intercept": np.nan,
             "r_squared": float(best_lag["r_squared"]),
@@ -742,6 +781,8 @@ def _prepare_world_gdp_level_dataset(
 
 
 def _build_regression_plot_points(
+    data_dir: Path,
+    macro: pd.DataFrame | None,
     dataset: pd.DataFrame,
     world_gdp_dataset: pd.DataFrame,
     world_gdp_5y_dataset: pd.DataFrame,
@@ -767,6 +808,7 @@ def _build_regression_plot_points(
         x_label: str,
         y_label: str,
         plot_note: str,
+        value_format: str = "pct",
     ) -> None:
         for point in data.itertuples(index=False):
             x_value = float(getattr(point, x_column))
@@ -785,9 +827,26 @@ def _build_regression_plot_points(
                     + coefficients_for_model[x_column] * x_value,
                     "line_type": "regression",
                     "plot_note": plot_note,
+                    "value_format": value_format,
                 }
             )
 
+    levels = _prepare_world_gdp_level_dataset(data_dir, macro)
+    level_coefficients, _ = _ols(
+        levels, ["log_world_real_gdp"], target="log_refined_usage"
+    )
+    add_univariate(
+        model_id="log_levels",
+        model_name="Long-run scale relationship",
+        data=levels,
+        x_column="log_world_real_gdp",
+        y_column="log_refined_usage",
+        coefficients_for_model=level_coefficients,
+        x_label="log world real GDP",
+        y_label="log refined usage",
+        plot_note="Log-level 1960-2024 sample; shows long-run scale relationship.",
+        value_format="log",
+    )
     add_univariate(
         model_id="gdp_per_capita_only",
         model_name="GDP per capita only",
@@ -820,6 +879,34 @@ def _build_regression_plot_points(
         x_label="World real GDP growth",
         y_label="Refined usage growth",
         plot_note="Annual 1961-2024 sample; line forced through zero.",
+    )
+    pre_1990 = world_gdp_dataset[world_gdp_dataset["year"] <= 1989]
+    pre_1990_coefficients, _ = _ols(pre_1990, WORLD_GDP_ONLY)
+    add_univariate(
+        model_id="pre_1990_annual_growth",
+        model_name="Annual growth, 1961-1989",
+        data=pre_1990,
+        x_column="world_real_gdp_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=pre_1990_coefficients,
+        x_label="World real GDP growth",
+        y_label="Refined usage growth",
+        plot_note="Annual 1961-1989 sample with intercept.",
+    )
+    exclude_2020_2021 = world_gdp_dataset[
+        ~world_gdp_dataset["year"].isin([2020, 2021])
+    ]
+    exclude_2020_2021_coefficients, _ = _ols(exclude_2020_2021, WORLD_GDP_ONLY)
+    add_univariate(
+        model_id="exclude_2020_2021",
+        model_name="Annual growth excluding 2020-2021",
+        data=exclude_2020_2021,
+        x_column="world_real_gdp_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=exclude_2020_2021_coefficients,
+        x_label="World real GDP growth",
+        y_label="Refined usage growth",
+        plot_note="Annual 1961-2024 sample, excluding 2020 and 2021.",
     )
     add_univariate(
         model_id="world_gdp_5y_cagr",
@@ -861,6 +948,7 @@ def _build_regression_plot_points(
                 "y_value": float(point.refined_usage_growth),
                 "fitted_value": fitted_value,
                 "line_type": "actual_equals_fitted",
+                "value_format": "pct",
                 "plot_note": (
                     "Multivariate model shown as actual versus fitted because "
                     "there is no single x-axis driver."

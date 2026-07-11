@@ -158,6 +158,18 @@ input[type="range"] {
   color: var(--ink);
 }
 
+.metric-equation {
+  display: block;
+  max-width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: #4d4942;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .metric.accent strong {
   color: var(--red);
 }
@@ -1056,6 +1068,27 @@ input[type="range"] {
   background: #fffdf8;
 }
 
+.relationship-table tr.is-plotted td {
+  background: #f4f9f9;
+}
+
+.relationship-table tr.is-plotted td:first-child {
+  border-left: 4px solid var(--teal);
+}
+
+.plot-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #d9eeec;
+  color: #195b5e;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
 .relationship-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1116,6 +1149,19 @@ input[type="range"] {
   color: var(--ink);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
+}
+
+.plot-equation {
+  display: block;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: #4d4942;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .scatter-chart svg {

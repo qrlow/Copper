@@ -202,7 +202,15 @@ def test_regression_weights_are_normalized():
 
     assert round(log_levels["coefficient"], 3) == 0.786
     assert round(log_levels["r_squared"], 3) == 0.986
+    assert (
+        log_levels["equation"]
+        == "log_refined_usage = intercept + beta * log_world_real_gdp + error"
+    )
     assert round(rule["coefficient"], 3) == 0.931
+    assert (
+        rule["equation"]
+        == "refined_usage_growth = beta * world_real_gdp_growth + error"
+    )
     assert round(ex_covid["r_squared"], 3) == 0.453
 
 
@@ -210,8 +218,11 @@ def test_regression_plot_points_cover_all_models():
     outputs = estimate_driver_weights(Path("data"))
     plot_points = outputs.plot_points
 
-    assert set(plot_points["model_id"]) == set(outputs.fit["model_id"])
+    assert set(outputs.fit["model_id"]).issubset(set(plot_points["model_id"]))
     assert len(plot_points[plot_points["model_id"] == "world_gdp_annual_no_intercept"]) == 64
+    assert len(plot_points[plot_points["model_id"] == "log_levels"]) == 65
+    assert len(plot_points[plot_points["model_id"] == "pre_1990_annual_growth"]) == 29
+    assert len(plot_points[plot_points["model_id"] == "exclude_2020_2021"]) == 62
     assert len(plot_points[plot_points["model_id"] == "world_gdp_5y_cagr"]) == 60
     assert {
         "model_id",
@@ -219,4 +230,5 @@ def test_regression_plot_points_cover_all_models():
         "y_value",
         "fitted_value",
         "line_type",
+        "value_format",
     }.issubset(plot_points.columns)

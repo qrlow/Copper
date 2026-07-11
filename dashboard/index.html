@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-copper-cleanup" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-equations" />
   </head>
   <body>
     <main class="app-shell">
@@ -438,16 +438,19 @@
               <span>Rule Slope</span>
               <strong id="relationshipRuleSlope">--</strong>
               <small>copper pp per 1 pp GDP</small>
+              <code class="metric-equation">refined_usage_growth = beta * world_real_gdp_growth + error</code>
             </article>
             <article class="metric compact">
               <span>Annual Rule R²</span>
               <strong id="relationshipRuleR2">--</strong>
               <small id="relationshipSample">--</small>
+              <code class="metric-equation">refined_usage_growth = beta * world_real_gdp_growth + error</code>
             </article>
             <article class="metric compact">
               <span>Long-Run R²</span>
               <strong id="relationshipLongRunR2">--</strong>
               <small>log levels, scale relationship</small>
+              <code class="metric-equation">log_refined_usage = intercept + beta * log_world_real_gdp + error</code>
             </article>
           </div>
         </section>
@@ -487,7 +490,7 @@
               <span class="badge">Fitted line</span>
             </div>
             <div id="regressionPlotGrid" class="regression-plot-grid" aria-label="Regression scatterplots with fitted lines"></div>
-            <p class="panel-note">Each scatterplot uses the same data and coefficients as the evidence table. The multivariate model is shown as actual versus fitted because it has multiple x-axis drivers.</p>
+            <p class="panel-note">Only the highlighted evidence rows are plotted here.</p>
           </article>
 
           <article class="panel relationship-method-panel">
@@ -565,6 +568,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-gdp-copper-cleanup"></script>
+    <script src="./app.js?v=2026-07-11-gdp-equations"></script>
   </body>
 </html>

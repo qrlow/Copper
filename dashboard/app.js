@@ -19,8 +19,21 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-gdp-copper-cleanup";
+const DATA_VERSION = "2026-07-11-gdp-equations";
 const APP_ROOT = new URL("../", window.location.href);
+const RELATIONSHIP_PLOT_ORDER = [
+  {
+    plotId: "world_gdp_annual_no_intercept",
+    diagnosticId: "annual_growth_no_intercept",
+    title: "World GDP rule-of-thumb",
+  },
+  { plotId: "log_levels", diagnosticId: "log_levels" },
+  { plotId: "pre_1990_annual_growth", diagnosticId: "pre_1990_annual_growth" },
+  { plotId: "exclude_2020_2021", diagnosticId: "exclude_2020_2021" },
+];
+const PLOTTED_RELATIONSHIP_IDS = new Set(
+  RELATIONSHIP_PLOT_ORDER.map((plot) => plot.diagnosticId),
+);
 
 function appUrl(path) {
   return new URL(path, APP_ROOT).toString();
@@ -947,14 +960,8 @@ function relationshipResultClass(row) {
   return "weak-fit";
 }
 
-function compactRelationshipVariable(variable) {
-  return String(variable)
-    .replaceAll("log_world_real_gdp", "log world GDP")
-    .replaceAll("log_refined_usage", "log refined usage")
-    .replaceAll("world_real_gdp_growth_change", "change in world GDP growth")
-    .replaceAll("refined_usage_growth_change", "change in copper usage growth")
-    .replaceAll("world_real_gdp_growth", "world GDP growth")
-    .replaceAll("refined_usage_growth", "copper usage growth");
+function compactRelationshipEquation(equation) {
+  return String(equation || "");
 }
 
 function renderRelationshipDiagnostics(rows) {
@@ -962,15 +969,18 @@ function renderRelationshipDiagnostics(rows) {
   container.innerHTML = rows
     .map((row) => {
       const fitClass = relationshipResultClass(row);
+      const plottedClass = PLOTTED_RELATIONSHIP_IDS.has(String(row.test_id))
+        ? "is-plotted"
+        : "";
       return `
-        <tr class="${fitClass}">
-          <td>${row.test_name}</td>
+        <tr class="${fitClass} ${plottedClass}">
+          <td>${row.test_name}${
+            plottedClass ? '<span class="plot-badge">Plotted</span>' : ""
+          }</td>
           <td>${Math.round(row.sample_start_year)}-${Math.round(row.sample_end_year)}<br><small>${Math.round(
             row.observations,
           )} observations</small></td>
-          <td><code>${compactRelationshipVariable(row.y_variable)} ~ ${compactRelationshipVariable(
-            row.x_variable,
-          )}</code><br><small>${row.method}</small></td>
+          <td><code>${compactRelationshipEquation(row.equation)}</code><br><small>${row.method}</small></td>
           <td>${relationshipCoefficient(row)}</td>
           <td><strong>${formatNumber(row.r_squared, 3)}</strong></td>
           <td>${row.readthrough}</td>
@@ -978,6 +988,13 @@ function renderRelationshipDiagnostics(rows) {
       `;
     })
     .join("");
+}
+
+function plotValueFormatter(points, value, digits = 1) {
+  if (points[0].value_format === "log") {
+    return Number(value).toFixed(digits + 1);
+  }
+  return formatSignedPct(value, digits);
 }
 
 function paddedDomain(values) {
@@ -1043,7 +1060,7 @@ function renderRegressionScatter(modelId, points) {
         .map(
           (tick) => `
             <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
-            <text class="scatter-axis-label" x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatSignedPct(tick, 1)}</text>
+            <text class="scatter-axis-label" x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${plotValueFormatter(points, tick, 1)}</text>
           `,
         )
         .join("")}
@@ -1051,7 +1068,7 @@ function renderRegressionScatter(modelId, points) {
         .map(
           (tick) => `
             <line class="grid-line vertical" x1="${x(tick)}" x2="${x(tick)}" y1="${margin.top}" y2="${margin.top + chartHeight}" />
-            <text class="scatter-axis-label" x="${x(tick)}" y="${height - 34}" text-anchor="middle">${formatSignedPct(tick, 1)}</text>
+            <text class="scatter-axis-label" x="${x(tick)}" y="${height - 34}" text-anchor="middle">${plotValueFormatter(points, tick, 1)}</text>
           `,
         )
         .join("")}
@@ -1062,7 +1079,7 @@ function renderRegressionScatter(modelId, points) {
         .map(
           (point) => `
             <circle class="scatter-point" cx="${x(Number(point.x_value))}" cy="${y(Number(point.y_value))}" r="4.2">
-              <title>${Math.round(point.year)}: x ${formatSignedPct(point.x_value, 2)}, y ${formatSignedPct(point.y_value, 2)}</title>
+              <title>${Math.round(point.year)}: x ${plotValueFormatter(points, point.x_value, 2)}, y ${plotValueFormatter(points, point.y_value, 2)}</title>
             </circle>
           `,
         )
@@ -1077,28 +1094,33 @@ function renderRegressionScatter(modelId, points) {
   `;
 }
 
-function renderRegressionPlots(fitRows, plotPoints) {
+function renderRegressionPlots(diagnostics, plotPoints) {
   const container = document.getElementById("regressionPlotGrid");
   const grouped = plotPoints.reduce((groups, point) => {
     groups[point.model_id] = groups[point.model_id] || [];
     groups[point.model_id].push(point);
     return groups;
   }, {});
+  const diagnosticsById = Object.fromEntries(
+    diagnostics.map((row) => [String(row.test_id), row]),
+  );
 
-  container.innerHTML = fitRows
-    .filter((fit) => grouped[fit.model_id])
-    .map((fit) => {
-      const points = grouped[fit.model_id].sort((a, b) => Number(a.year) - Number(b.year));
+  container.innerHTML = RELATIONSHIP_PLOT_ORDER
+    .filter((plot) => grouped[plot.plotId] && diagnosticsById[plot.diagnosticId])
+    .map((plot) => {
+      const diagnostic = diagnosticsById[plot.diagnosticId];
+      const points = grouped[plot.plotId].sort((a, b) => Number(a.year) - Number(b.year));
       return `
         <article class="regression-plot-card">
           <div class="plot-card-header">
             <div>
-              <h3>${fit.model_name}</h3>
+              <h3>${plot.title ?? diagnostic.test_name}</h3>
               <span>${points.length} observations</span>
             </div>
-            <strong>R² ${formatNumber(fit.r_squared, 3)}</strong>
+            <strong>R² ${formatNumber(diagnostic.r_squared, 3)}</strong>
           </div>
-          <div class="scatter-chart">${renderRegressionScatter(fit.model_id, points)}</div>
+          <div class="scatter-chart">${renderRegressionScatter(plot.plotId, points)}</div>
+          <code class="plot-equation">${compactRelationshipEquation(diagnostic.equation)}</code>
           <p>${points[0].plot_note}</p>
         </article>
       `;
@@ -1133,7 +1155,7 @@ function renderRegressionTab(regression) {
     `${Math.round(gdpRuleFit.observations)} observations`;
 
   renderRelationshipDiagnostics(regression.relationshipDiagnostics);
-  renderRegressionPlots(fitRows, regression.plotPoints);
+  renderRegressionPlots(regression.relationshipDiagnostics, regression.plotPoints);
 }
 
 function renderWorkbookBalanceChart(rows) {
