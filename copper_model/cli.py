@@ -72,7 +72,7 @@ def estimate_weights_command(args: argparse.Namespace) -> int:
         f"r_squared={fit['r_squared']:.3f}"
     )
     for row in outputs.summary.itertuples(index=False):
-        print(f"  {row.model_field}: {row.recommended_weight:.3f}")
+        print(f"  {row.model_field}: diagnostic share={row.diagnostic_lmg_share:.3f}")
     return 0
 
 

@@ -1,2 +1,2 @@
 method,dependent_variable,window_years,observations,sample_start_year,sample_end_year,r_squared,intercept
-OLS with intercept; model weights from LMG relative R-squared shares,refined_usage_growth,1,33,1992,2024,0.17844932982472217,-0.016493385822377724
+OLS with intercept; diagnostic LMG relative R-squared shares,refined_usage_growth,1,33,1992,2024,0.17844932982472217,-0.016493385822377724

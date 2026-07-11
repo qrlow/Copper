@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-regression-weights";
+const DATA_VERSION = "2026-07-11-regression-diagnostic";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -795,7 +795,7 @@ function renderScenarioExplanation(state) {
     {
       label: "Demand driver weights",
       source: sourceNote(
-        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights come from an annual multivariate regression of ICSG world refined usage growth on those World Bank driver growth rates. Because raw OLS coefficients are not bounded weights, the model uses each driver's LMG relative R-squared share. The fit is modest, so this is data-informed calibration rather than a structural law.",
+        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights are scenario assumptions. The regression files are kept as a diagnostic and are not used as the forecast weights because the fit is weak and the predictors overlap mechanically: GDP per capita plus population approximately reconstructs GDP growth, while industry activity already contains GDP.",
         [
           sourceLink("ICSG historical usage", sourceUrls.icsgHistoricalBalance),
           sourceLink("GDP", sourceUrls.worldBankGdp),

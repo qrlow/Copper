@@ -34,7 +34,7 @@ class RegressionOutputs:
     @property
     def weights(self) -> dict[str, float]:
         return {
-            str(row.model_field): float(row.recommended_weight)
+            str(row.model_field): float(row.diagnostic_lmg_share)
             for row in self.summary.itertuples(index=False)
         }
 
@@ -146,14 +146,14 @@ def estimate_driver_weights(
                 "ols_coefficient": coefficients[predictor],
                 "standardized_beta": standardized[predictor],
                 "lmg_r2_contribution": lmg[predictor],
-                "recommended_weight": max(0.0, lmg[predictor]) / lmg_total,
+                "diagnostic_lmg_share": max(0.0, lmg[predictor]) / lmg_total,
             }
         )
 
     fit = pd.DataFrame(
         [
             {
-                "method": "OLS with intercept; model weights from LMG relative R-squared shares",
+                "method": "OLS with intercept; diagnostic LMG relative R-squared shares",
                 "dependent_variable": "refined_usage_growth",
                 "window_years": window_years,
                 "observations": len(dataset),

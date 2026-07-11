@@ -220,7 +220,7 @@
         <div class="explanation-copy">
           <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, USGS MCS 2026 2024 world mine/refinery supply, and World Bank macro drivers.</p>
           <p>The World Bank macro growth rates are fixed historical lookback rates applied across the forecast horizon; they are not rolling future forecasts.</p>
-          <p>The demand-driver weights are regression-calibrated from annual ICSG refined-usage growth and World Bank macro growth. The regression fit is modest, so the dashboard treats the result as calibration evidence, not a precise law.</p>
+          <p>The demand-driver weights are scenario assumptions. A regression diagnostic is shown below, but it is not used as the forecast weighting because fit is weak and the macro predictors overlap mechanically.</p>
           <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
           <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
         </div>
@@ -277,8 +277,8 @@
           </article>
 
           <article class="source-card">
-            <h3>Demand Weight Regression</h3>
-            <p>Annual OLS regression of ICSG world refined usage growth on World Bank industry-activity, GDP-per-capita, and population growth. Model weights use LMG relative R-squared shares: 38.3%, 30.2%, and 31.5%. Fit is modest at R-squared 0.178.</p>
+            <h3>Regression Diagnostic</h3>
+            <p>Annual OLS regression of ICSG world refined usage growth on World Bank industry-activity, GDP-per-capita, and population growth. It is not used for forecast weights because R-squared is only 0.178 and the predictors overlap: GDP per capita plus population reconstructs GDP growth, while industry activity already contains GDP.</p>
             <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
             <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
@@ -295,7 +295,7 @@
 
           <article class="source-card">
             <h3>Scenario Assumptions</h3>
-            <p>Demand driver weights, supply-growth rules, and scenario stress knobs. Driver weights come from the regression summary; the base-case 83%/17% primary/secondary split follows the ICSG 2024 refined-production split after grouping SX-EW with primary supply.</p>
+            <p>Demand driver weights, supply-growth rules, and scenario stress knobs. Driver weights are scenario assumptions, with the regression retained only as a diagnostic. The base-case 83%/17% primary/secondary split follows the ICSG 2024 refined-production split after grouping SX-EW with primary supply.</p>
             <a href="../config/base_case.json" target="_blank" rel="noreferrer">Base-case assumptions JSON</a>
             <a href="../config/bull_case.json" target="_blank" rel="noreferrer">Bull-case assumptions JSON</a>
             <a href="../config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>
@@ -320,6 +320,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-regression-weights"></script>
+    <script src="./app.js?v=2026-07-11-regression-diagnostic"></script>
   </body>
 </html>

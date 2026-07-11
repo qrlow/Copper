@@ -1,4 +1,4 @@
-predictor,model_field,ols_coefficient,standardized_beta,lmg_r2_contribution,recommended_weight
+predictor,model_field,ols_coefficient,standardized_beta,lmg_r2_contribution,diagnostic_lmg_share
 industry_activity_growth,industry_value_added,0.18209922406928658,0.2802688910706989,0.06835019870443049,0.383023005867077
 gdp_per_capita_growth,gdp_per_capita,0.15833712833059976,0.10654684943860718,0.05384339296038524,0.3017293088927357
 population_growth,population,3.099750510733359,0.2590688232784074,0.056255738159906366,0.31524768524018737

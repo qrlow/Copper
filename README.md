@@ -27,7 +27,7 @@ Open `http://127.0.0.1:8000/dashboard/` to view the dashboard.
 Outputs are written to `outputs/`:
 
 - `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
-- `demand_driver_regression_summary.csv`: OLS coefficients and model driver weights.
+- `demand_driver_regression_summary.csv`: OLS coefficients and diagnostic relative-importance shares.
 - `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics.
 - `base_case_forecast.csv`: annual global refined copper balance.
 - `base_case_regional_demand.csv`: annual regional demand paths.
@@ -59,7 +59,7 @@ regional demand growth =
 
 The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
 
-Demand driver weights are regression-calibrated rather than hand-picked. The `estimate-weights` command regresses annual global refined copper usage growth from the ICSG Factbook on World Bank world industry-activity, GDP-per-capita, and population growth. Raw OLS coefficients are not directly usable as bounded model weights, so the model uses each driver's LMG relative contribution to multivariate R-squared. The current annual regression uses 1992-2024 data and recommends 38.3% industry activity, 30.2% GDP per capita, and 31.5% population. The fit is modest, so these weights should be treated as data-informed calibration, not a structural law.
+Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it regresses annual global refined copper usage growth from the ICSG Factbook on World Bank world industry-activity, GDP-per-capita, and population growth. The diagnostic regression has weak fit and overlapping predictors, so its relative-importance shares are not used as the forecast weights. In growth terms, GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share, so the drivers are mechanically entangled.
 
 Supply is split into primary and secondary refined copper:
 
