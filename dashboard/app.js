@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-regression-diagnostic";
+const DATA_VERSION = "2026-07-11-regression-tab";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -38,6 +38,14 @@ function scenarioFiles(id) {
     forecast: versionedAppUrl(`outputs/${id}_forecast.csv`),
     regional: versionedAppUrl(`outputs/${id}_regional_demand.csv`),
     mine: versionedAppUrl(`outputs/${id}_mine_supply_by_country.csv`),
+  };
+}
+
+function regressionFiles() {
+  return {
+    dataset: versionedAppUrl("outputs/demand_driver_regression_dataset.csv"),
+    summary: versionedAppUrl("outputs/demand_driver_regression_summary.csv"),
+    fit: versionedAppUrl("outputs/demand_driver_regression_fit.csv"),
   };
 }
 
@@ -159,6 +167,10 @@ function formatSignedPct(value, digits = 1) {
   const scaled = value * 100;
   const sign = scaled > 0 ? "+" : "";
   return `${sign}${scaled.toFixed(digits)}%`;
+}
+
+function formatNumber(value, digits = 3) {
+  return Number(value).toFixed(digits);
 }
 
 function formatBalance(value) {
@@ -899,6 +911,86 @@ function renderScenarioExplanation(state) {
     .join("");
 }
 
+function regressionDriverLabel(predictor) {
+  return {
+    industry_activity_growth: "Industry activity growth",
+    gdp_per_capita_growth: "GDP per capita growth",
+    population_growth: "Population growth",
+  }[predictor] ?? predictor;
+}
+
+function regressionInterpretation(predictor) {
+  return {
+    industry_activity_growth:
+      "Real GDP multiplied by industry share of GDP. This already embeds the GDP cycle.",
+    gdp_per_capita_growth:
+      "Real GDP per person. This captures income/intensity, but it is mechanically linked to total GDP and population.",
+    population_growth:
+      "Headcount growth. It overlaps with GDP per capita because GDP equals GDP per capita multiplied by population.",
+  }[predictor] ?? "";
+}
+
+function renderRegressionTab(regression) {
+  const fit = regression.fit;
+  const summary = regression.summary;
+  const dataset = regression.dataset;
+  const sampleText = `${Math.round(fit.sample_start_year)}-${Math.round(fit.sample_end_year)}`;
+
+  document.getElementById("regressionR2").textContent = formatNumber(fit.r_squared, 3);
+  document.getElementById("regressionR2Text").textContent = formatNumber(fit.r_squared, 3);
+  document.getElementById("regressionSample").textContent = sampleText;
+  document.getElementById("regressionObservationCount").textContent =
+    `${Math.round(fit.observations)} observations`;
+  document.getElementById("regressionMethod").textContent =
+    `${fit.method}; dependent variable is ${fit.dependent_variable}; intercept is ${formatNumber(
+      fit.intercept,
+      4,
+    )}.`;
+  document.getElementById("regressionDatasetBadge").textContent =
+    `${dataset.length} observations`;
+
+  document.getElementById("regressionSummaryRows").innerHTML = summary
+    .map((row) => `
+      <tr>
+        <td>${regressionDriverLabel(row.predictor)}</td>
+        <td>${formatNumber(row.ols_coefficient, 3)}</td>
+        <td>${formatNumber(row.standardized_beta, 3)}</td>
+        <td>${formatPct(row.diagnostic_lmg_share, 1)}</td>
+        <td>${regressionInterpretation(row.predictor)}</td>
+      </tr>
+    `)
+    .join("");
+
+  document.getElementById("regressionDatasetRows").innerHTML = dataset
+    .slice(-8)
+    .map((row) => `
+      <tr>
+        <td>${Math.round(row.year)}</td>
+        <td>${formatSignedPct(row.refined_usage_growth)}</td>
+        <td>${formatSignedPct(row.industry_activity_growth)}</td>
+        <td>${formatSignedPct(row.gdp_per_capita_growth)}</td>
+        <td>${formatSignedPct(row.population_growth)}</td>
+      </tr>
+    `)
+    .join("");
+}
+
+function setupTabNavigation() {
+  const buttons = Array.from(document.querySelectorAll("[data-tab-target]"));
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      buttons.forEach((item) => {
+        const isActive = item === button;
+        item.classList.toggle("is-active", isActive);
+        item.setAttribute("aria-selected", String(isActive));
+      });
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("is-hidden", panel.id !== button.dataset.tabTarget);
+      });
+    });
+  });
+}
+
 function syncYearRange(forecast) {
   const years = forecast.map((row) => row.year);
   const yearRange = document.getElementById("yearRange");
@@ -954,21 +1046,36 @@ async function loadJson(url) {
 }
 
 async function init() {
-  const scenarioEntries = await Promise.all(
-    SCENARIOS.map(async (scenario) => {
-      const files = scenarioFiles(scenario.id);
-      const [config, forecast, regional, mine] = await Promise.all([
-        loadJson(files.config),
-        loadDataset(files.forecast),
-        loadDataset(files.regional),
-        loadDataset(files.mine),
-      ]);
-      return [scenario.id, { ...scenario, files, config, forecast, regional, mine }];
-    }),
-  );
+  const files = regressionFiles();
+  const [scenarioEntries, regressionDataset, regressionSummary, regressionFit] =
+    await Promise.all([
+      Promise.all(
+        SCENARIOS.map(async (scenario) => {
+          const scenarioDataFiles = scenarioFiles(scenario.id);
+          const [config, forecast, regional, mine] = await Promise.all([
+            loadJson(scenarioDataFiles.config),
+            loadDataset(scenarioDataFiles.forecast),
+            loadDataset(scenarioDataFiles.regional),
+            loadDataset(scenarioDataFiles.mine),
+          ]);
+          return [
+            scenario.id,
+            { ...scenario, files: scenarioDataFiles, config, forecast, regional, mine },
+          ];
+        }),
+      ),
+      loadDataset(files.dataset),
+      loadDataset(files.summary),
+      loadDataset(files.fit),
+    ]);
 
   const state = {
     scenarios: Object.fromEntries(scenarioEntries),
+    regression: {
+      dataset: regressionDataset,
+      summary: regressionSummary,
+      fit: regressionFit[0],
+    },
     selectedScenarioId: "base_case",
   };
   const scenarioSelect = document.getElementById("scenarioSelect");
@@ -979,6 +1086,8 @@ async function init() {
   const yearRange = document.getElementById("yearRange");
   yearRange.addEventListener("input", () => render(state));
   window.addEventListener("resize", () => render(state));
+  setupTabNavigation();
+  renderRegressionTab(state.regression);
   render(state);
 }
 

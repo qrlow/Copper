@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-driver-breakdowns" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-regression-tab" />
   </head>
   <body>
     <main class="app-shell">
@@ -26,6 +26,12 @@
         </div>
       </header>
 
+      <nav class="app-tabs" aria-label="Dashboard views" role="tablist">
+        <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">Regression Diagnostic</button>
+      </nav>
+
+      <div id="modelTab" class="tab-panel">
       <section class="metrics" aria-label="Selected year metrics">
         <article class="metric">
           <span>Demand</span>
@@ -318,8 +324,161 @@
           </article>
         </div>
       </section>
+      </div>
+
+      <section id="regressionTab" class="tab-panel is-hidden" aria-labelledby="regressionHeading">
+        <section class="panel regression-hero">
+          <div class="panel-header">
+            <h2 id="regressionHeading">Regression Diagnostic</h2>
+            <span class="badge">Diagnostic only</span>
+          </div>
+          <p class="regression-lede">This regression tests whether public macro drivers can statistically explain annual world refined copper usage growth. The result is useful as a caution: it is not strong enough to calibrate the forecast weights.</p>
+          <div class="regression-metrics" aria-label="Regression summary metrics">
+            <article class="metric compact">
+              <span>Fit</span>
+              <strong id="regressionR2">--</strong>
+              <small>R-squared</small>
+            </article>
+            <article class="metric compact">
+              <span>Sample</span>
+              <strong id="regressionSample">--</strong>
+              <small id="regressionObservationCount">-- observations</small>
+            </article>
+            <article class="metric compact accent">
+              <span>Model Use</span>
+              <strong>Not used</strong>
+              <small>scenario weights remain assumptions</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="regression-grid" aria-label="Regression details">
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Regression Result</h2>
+              <span class="badge">OLS + diagnostic shares</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table regression-table">
+                <thead>
+                  <tr>
+                    <th>Driver</th>
+                    <th>OLS coefficient</th>
+                    <th>Standardized beta</th>
+                    <th>Diagnostic LMG share</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody id="regressionSummaryRows"></tbody>
+              </table>
+            </div>
+            <p class="panel-note">The LMG share decomposes the regression's explained variance across predictors. Since the overall R-squared is weak, these shares are not forecast weights.</p>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Equation Tested</h2>
+              <span class="badge">Annual growth</span>
+            </div>
+            <div class="formula-block">
+              <code>refined usage growth = intercept + beta1 * industry activity growth + beta2 * GDP per capita growth + beta3 * population growth + error</code>
+            </div>
+            <dl class="method-list">
+              <div>
+                <dt>Dependent variable</dt>
+                <dd>Annual growth in world refined copper usage from the ICSG World Copper Factbook historical annex.</dd>
+              </div>
+              <div>
+                <dt>Independent variables</dt>
+                <dd>World Bank world industry activity growth, GDP-per-capita growth, and population growth.</dd>
+              </div>
+              <div>
+                <dt>Regression method</dt>
+                <dd id="regressionMethod">--</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>How The Dataset Is Built</h2>
+              <span class="badge">Reproducible CSV</span>
+            </div>
+            <ol class="method-steps">
+              <li>Transcribe annual world mine production, refined production, and refined usage from the ICSG Factbook annex for 1960-2024.</li>
+              <li>Fetch World Bank world real GDP, industry value-added share of GDP, and population.</li>
+              <li>Calculate industry activity as real GDP multiplied by industry share of GDP.</li>
+              <li>Calculate GDP per capita as real GDP divided by population.</li>
+              <li>Convert usage and macro variables into annual growth rates where all variables overlap. The regression sample starts in 1992 because World Bank world industry-share data begins in 1991.</li>
+            </ol>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Statistical Considerations</h2>
+              <span class="badge">Why not use it</span>
+            </div>
+            <ul class="consideration-list">
+              <li>Low explanatory power: R-squared is only <strong id="regressionR2Text">--</strong>, so most annual copper usage growth remains unexplained.</li>
+              <li>Predictor overlap: <code>GDP = GDP per capita * population</code>, so population is mechanically related to GDP per capita.</li>
+              <li>Industry activity overlap: <code>industry activity = GDP * industry share</code>, so the industry driver already contains the GDP component.</li>
+              <li>Global time-series sample: the regression has a small annual sample and no country-level panel variation.</li>
+              <li>Missing copper-specific drivers: prices, substitution, sector mix, grid investment, China property cycles, policy, and inventory changes are not included.</li>
+            </ul>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Dataset Preview</h2>
+              <span id="regressionDatasetBadge" class="badge">--</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table regression-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Refined usage growth</th>
+                    <th>Industry activity growth</th>
+                    <th>GDP per capita growth</th>
+                    <th>Population growth</th>
+                  </tr>
+                </thead>
+                <tbody id="regressionDatasetRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Data Sources</h2>
+              <span class="badge">Exact links</span>
+            </div>
+            <div class="source-card embedded">
+              <h3>ICSG Refined Usage</h3>
+              <p>Historical world refined copper usage from the ICSG World Copper Factbook 2025 annex, transcribed into the local seed file.</p>
+              <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
+              <a href="../data/seed/icsg_world_copper_balance_1960_2024.csv" target="_blank" rel="noreferrer">Local transcribed ICSG seed</a>
+            </div>
+            <div class="source-card embedded">
+              <h3>World Bank Macro Drivers</h3>
+              <p>World-level real GDP, industry value-added share, and population used to construct the regression drivers.</p>
+              <a href="https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.KD?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">World real GDP API response</a>
+              <a href="https://api.worldbank.org/v2/country/WLD/indicator/NV.IND.TOTL.ZS?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">World industry share API response</a>
+              <a href="https://api.worldbank.org/v2/country/WLD/indicator/SP.POP.TOTL?format=json&amp;per_page=20000" target="_blank" rel="noreferrer">World population API response</a>
+            </div>
+            <div class="source-card embedded">
+              <h3>Regression Artifacts</h3>
+              <p>Generated files and code used by the dashboard tab.</p>
+              <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset CSV</a>
+              <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression summary CSV</a>
+              <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit CSV</a>
+              <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
+            </div>
+          </article>
+        </section>
+      </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-regression-diagnostic"></script>
+    <script src="./app.js?v=2026-07-11-regression-tab"></script>
   </body>
 </html>
