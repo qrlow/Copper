@@ -1032,6 +1032,20 @@ input[type="range"] {
   min-width: 880px;
 }
 
+.model-comparison-panel .regression-table {
+  min-width: 1180px;
+}
+
+.model-comparison-panel th:nth-child(2),
+.model-comparison-panel td:nth-child(2) {
+  min-width: 320px;
+}
+
+.model-comparison-panel th:nth-child(6),
+.model-comparison-panel td:nth-child(6) {
+  min-width: 340px;
+}
+
 .formula-block {
   margin-bottom: 14px;
   padding: 14px;

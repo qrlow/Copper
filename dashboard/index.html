@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-world-gdp-workbook-tab" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-model-comparison-wide" />
   </head>
   <body>
     <main class="app-shell">
@@ -450,29 +450,7 @@
         </section>
 
         <section class="regression-grid" aria-label="Regression details">
-          <article class="panel">
-            <div class="panel-header">
-              <h2>Regression Result</h2>
-              <span class="badge">OLS + diagnostic shares</span>
-            </div>
-            <div class="compact-table-wrap">
-              <table class="compact-table regression-table">
-                <thead>
-                  <tr>
-                    <th>Driver</th>
-                    <th>OLS coefficient</th>
-                    <th>Standardized beta</th>
-                    <th>Diagnostic LMG share</th>
-                    <th>Interpretation</th>
-                  </tr>
-                </thead>
-                <tbody id="regressionSummaryRows"></tbody>
-              </table>
-            </div>
-            <p class="panel-note">The LMG share decomposes the regression's explained variance across predictors. Since the overall R-squared is weak, these shares are not forecast weights.</p>
-          </article>
-
-          <article class="panel">
+          <article class="panel wide model-comparison-panel">
             <div class="panel-header">
               <h2>Model Comparison</h2>
               <span class="badge">Annual growth</span>
@@ -493,6 +471,28 @@
               </table>
             </div>
             <p class="panel-note">The no-intercept world-GDP row is the closest version of the Goldman-style rule-of-thumb. The 5-year CAGR row is the smoother cycle-level version.</p>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Regression Result</h2>
+              <span class="badge">OLS + diagnostic shares</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table regression-table">
+                <thead>
+                  <tr>
+                    <th>Driver</th>
+                    <th>OLS coefficient</th>
+                    <th>Standardized beta</th>
+                    <th>Diagnostic LMG share</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody id="regressionSummaryRows"></tbody>
+              </table>
+            </div>
+            <p class="panel-note">The LMG share decomposes the regression's explained variance across predictors. Since the overall R-squared is weak, these shares are not forecast weights.</p>
           </article>
 
           <article class="panel">
@@ -631,6 +631,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-world-gdp-workbook-tab"></script>
+    <script src="./app.js?v=2026-07-11-model-comparison-wide"></script>
   </body>
 </html>

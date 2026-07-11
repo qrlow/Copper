@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-world-gdp-workbook-tab";
+const DATA_VERSION = "2026-07-11-model-comparison-wide";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
