@@ -47,6 +47,11 @@ const regionColors = {
   "Rest of World": colors.gold,
 };
 
+const supplyBreakdownColors = {
+  "Primary refined": colors.copper,
+  "Secondary refined": colors.teal,
+};
+
 const sourceUrls = {
   icsgFactbook: "https://icsg.org/copper-factbook/",
   usgsCopper:
@@ -340,6 +345,71 @@ function renderMineSupply(rows) {
       </div>
     `)
     .join("");
+}
+
+function renderStackedBreakdown(stackId, listId, rows) {
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  const sorted = [...rows].sort((a, b) => b.value - a.value);
+  document.getElementById(stackId).innerHTML = sorted
+    .map((row) => {
+      const share = total > 0 ? row.value / total : 0;
+      return `
+        <span
+          class="stack-segment"
+          style="width:${share * 100}%;background:${row.color}"
+          title="${row.label}: ${formatKt(row.value)} kt (${formatPct(share)})"
+        >
+          ${share >= 0.1 ? `<span>${row.label}</span>` : ""}
+        </span>
+      `;
+    })
+    .join("");
+
+  document.getElementById(listId).innerHTML = sorted
+    .map((row) => {
+      const share = total > 0 ? row.value / total : 0;
+      return `
+        <div class="breakdown-row">
+          <span class="breakdown-name">
+            <span class="legend-swatch" style="background:${row.color}"></span>
+            ${row.label}
+          </span>
+          <strong>${formatKt(row.value)} kt</strong>
+          <span>${formatPct(share)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderDemandSupplyBreakdown(forecastRow, regionalRows) {
+  document.getElementById("demandBreakdownBadge").textContent = `${formatKt(forecastRow.demand_kt)} kt`;
+  document.getElementById("supplyBreakdownBadge").textContent = `${formatKt(
+    forecastRow.refined_supply_kt,
+  )} kt`;
+
+  renderStackedBreakdown(
+    "demandBreakdownStack",
+    "demandBreakdownRows",
+    regionalRows.map((row) => ({
+      label: row.region,
+      value: row.demand_kt,
+      color: regionColors[row.region] ?? colors.copper,
+    })),
+  );
+
+  renderStackedBreakdown("supplyBreakdownStack", "supplyBreakdownRows", [
+    {
+      label: "Primary refined",
+      value: forecastRow.primary_refined_supply_kt,
+      color: supplyBreakdownColors["Primary refined"],
+    },
+    {
+      label: "Secondary refined",
+      value: forecastRow.secondary_refined_supply_kt,
+      color: supplyBreakdownColors["Secondary refined"],
+    },
+  ]);
 }
 
 function updateMetrics(row) {
@@ -697,6 +767,7 @@ function render(state) {
   renderDriverSensitivity(state, year);
   renderScenarioExplanation(state);
   updateMetrics(selectedForecast);
+  renderDemandSupplyBreakdown(selectedForecast, selectedRegional);
   renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
   renderRegionalDemand(selectedRegional);

@@ -30,7 +30,7 @@ Outputs are written to `outputs/`:
 - `base_case_balance.png`: chart of demand, supply, and balance.
 - `bull_case_*` and `bear_case_*`: higher-tightness and lower-tightness scenario outputs for the dashboard.
 
-The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`. It presents the model as a small market-intelligence workbench: executive market signal, scenario comparison, driver bridge, physical balance charts, source links, and assumption rationale.
+The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`. It presents the model as a small market-intelligence workbench: executive market signal, scenario comparison, driver bridge, visual demand/supply breakdowns, physical balance charts, source links, and assumption rationale.
 
 ## Model Structure
 
