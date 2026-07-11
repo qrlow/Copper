@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-gdp-diagnostics";
+const DATA_VERSION = "2026-07-11-gdp-copper-cleanup";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -933,58 +933,6 @@ function renderScenarioExplanation(state) {
     .join("");
 }
 
-function regressionDriverLabel(predictor) {
-  return {
-    industry_activity_growth: "Industry activity growth",
-    gdp_per_capita_growth: "GDP per capita growth",
-    population_growth: "Population growth",
-  }[predictor] ?? predictor;
-}
-
-function regressionInterpretation(predictor) {
-  return {
-    industry_activity_growth:
-      "Real GDP multiplied by industry share of GDP. This already embeds the GDP cycle.",
-    gdp_per_capita_growth:
-      "Real GDP per person. This captures income/intensity, but it is mechanically linked to total GDP and population.",
-    population_growth:
-      "Headcount growth. It overlaps with GDP per capita because GDP equals GDP per capita multiplied by population.",
-  }[predictor] ?? "";
-}
-
-function regressionModelReadthrough(modelId) {
-  return {
-    gdp_per_capita_only:
-      "Cleaner single-driver test, but weak fit. It supports keeping GDP per capita as a useful context variable, not as a standalone demand model.",
-    multivariate_macro:
-      "Adds more macro information but still has weak fit and overlapping predictors, so it remains diagnostic only.",
-    world_gdp_annual:
-      "Uses total world real GDP, which is closer to the market rule-of-thumb. Fit improves versus GDP per capita, but annual copper-specific shocks still dominate.",
-    world_gdp_annual_no_intercept:
-      "Closest test of the rule-of-thumb: the fitted slope says a 1 pp move in world GDP growth maps to about 0.93 pp in copper usage growth.",
-    world_gdp_5y_cagr:
-      "Smoothing both series over 5-year CAGRs raises the fit, which suggests the GDP relationship is clearer over cycles than year by year.",
-    world_gdp_growth_change:
-      "Tests slowdowns directly by regressing changes in copper usage growth on changes in world GDP growth.",
-  }[modelId] ?? "Diagnostic only.";
-}
-
-function compactEquation(equation) {
-  return String(equation)
-    .replaceAll("refined_usage_growth_change", "usage growth change")
-    .replaceAll("world_real_gdp_growth_change", "world GDP growth change")
-    .replaceAll("refined_usage_growth", "usage growth")
-    .replaceAll("world_real_gdp_growth", "world GDP growth")
-    .replaceAll("gdp_per_capita_growth", "GDP/capita growth")
-    .replaceAll("industry_activity_growth", "industry growth")
-    .replaceAll("population_growth", "population growth");
-}
-
-function regressionKeyCoefficient(row) {
-  const label = row.key_coefficient_label || "Coefficient";
-  return `${label}: ${formatNumber(row.key_coefficient, 3)}`;
-}
-
 function relationshipCoefficient(row) {
   if (row.test_id === "log_levels") {
     return `${formatNumber(row.coefficient, 3)} elasticity`;
@@ -1160,90 +1108,32 @@ function renderRegressionPlots(fitRows, plotPoints) {
 
 function renderRegressionTab(regression) {
   const fitRows = regression.fit;
-  const multivariateFit =
-    fitRows.find((row) => row.model_id === "multivariate_macro") ?? fitRows[0];
-  const worldGdpFit =
-    fitRows.find((row) => row.model_id === "world_gdp_annual") ?? multivariateFit;
   const gdpRuleFit =
     fitRows.find((row) => row.model_id === "world_gdp_annual_no_intercept") ??
-    worldGdpFit;
-  const gdp5yFit =
-    fitRows.find((row) => row.model_id === "world_gdp_5y_cagr") ?? worldGdpFit;
-  const summary = regression.summary;
-  const dataset = regression.dataset;
-  const gdpDataset = regression.gdpDataset ?? dataset;
-  const sampleText = `${Math.round(gdpRuleFit.sample_start_year)}-${Math.round(
-    gdpRuleFit.sample_end_year,
-  )}`;
-
-  document.getElementById("regressionR2").textContent = formatNumber(
-    gdpRuleFit.key_coefficient,
+    fitRows[0];
+  const diagnostics = regression.relationshipDiagnostics;
+  const logLevels =
+    diagnostics.find((row) => row.test_id === "log_levels") ?? diagnostics[0];
+  const ruleDiagnostic =
+    diagnostics.find((row) => row.test_id === "annual_growth_no_intercept") ??
+    gdpRuleFit;
+  document.getElementById("relationshipRuleSlope").textContent = formatNumber(
+    ruleDiagnostic.coefficient ?? gdpRuleFit.key_coefficient,
     2,
   );
-  document.getElementById("regressionR2Text").textContent = formatNumber(
-    worldGdpFit.r_squared,
+  document.getElementById("relationshipRuleR2").textContent = formatNumber(
+    ruleDiagnostic.r_squared ?? gdpRuleFit.r_squared,
     3,
   );
-  document.getElementById("regressionSample").textContent = sampleText;
-  document.getElementById("regressionObservationCount").textContent =
+  document.getElementById("relationshipLongRunR2").textContent = formatNumber(
+    logLevels.r_squared,
+    3,
+  );
+  document.getElementById("relationshipSample").textContent =
     `${Math.round(gdpRuleFit.observations)} observations`;
-  document.getElementById("regressionDatasetBadge").textContent =
-    `${gdpDataset.length} annual observations`;
-  document.getElementById("regressionMethod").textContent =
-    `Annual world-GDP rule test uses ${Math.round(gdpRuleFit.observations)} observations from ${sampleText}; 5-year CAGR test R-squared is ${formatNumber(gdp5yFit.r_squared, 3)}. The industry/GDP-per-capita diagnostic starts later because World Bank world industry-share data begins in 1991.`;
-
-  document.getElementById("regressionSummaryRows").innerHTML = summary
-    .map((row) => `
-      <tr>
-        <td>${regressionDriverLabel(row.predictor)}</td>
-        <td>${formatNumber(row.ols_coefficient, 3)}</td>
-        <td>${formatNumber(row.standardized_beta, 3)}</td>
-        <td>${formatPct(row.diagnostic_lmg_share, 1)}</td>
-        <td>${regressionInterpretation(row.predictor)}</td>
-      </tr>
-    `)
-    .join("");
-
-  document.getElementById("regressionModelRows").innerHTML = fitRows
-    .map((row) => `
-      <tr>
-        <td>${row.model_name}</td>
-        <td><code>${compactEquation(row.equation)}</code></td>
-        <td>${formatNumber(row.r_squared, 3)}</td>
-        <td>${formatNumber(row.intercept, 4)}</td>
-        <td>${regressionKeyCoefficient(row)}</td>
-        <td>${regressionModelReadthrough(row.model_id)}</td>
-      </tr>
-    `)
-    .join("");
 
   renderRelationshipDiagnostics(regression.relationshipDiagnostics);
   renderRegressionPlots(fitRows, regression.plotPoints);
-
-  document.getElementById("regressionDatasetRows").innerHTML = dataset
-    .slice(-6)
-    .map((row) => `
-      <tr>
-        <td>${Math.round(row.year)}</td>
-        <td>${formatSignedPct(row.refined_usage_growth)}</td>
-        <td>${formatSignedPct(row.industry_activity_growth)}</td>
-        <td>${formatSignedPct(row.gdp_per_capita_growth)}</td>
-        <td>${formatSignedPct(row.population_growth)}</td>
-      </tr>
-    `)
-    .join("");
-
-  document.getElementById("regressionGdpDatasetRows").innerHTML = gdpDataset
-    .slice(-8)
-    .map((row) => `
-      <tr>
-        <td>${Math.round(row.year)}</td>
-        <td>${formatSignedPct(row.refined_usage_growth)}</td>
-        <td>${formatSignedPct(row.world_real_gdp_growth)}</td>
-        <td>${formatKt(row.refined_usage_end_kt)}</td>
-      </tr>
-    `)
-    .join("");
 }
 
 function renderWorkbookBalanceChart(rows) {

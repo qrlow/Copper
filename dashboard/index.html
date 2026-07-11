@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-diagnostics" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-copper-cleanup" />
   </head>
   <body>
     <main class="app-shell">
@@ -29,7 +29,7 @@
       <nav class="app-tabs" aria-label="Dashboard views" role="tablist">
         <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Workbook Model</button>
-        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">Regression Diagnostic</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">GDP-Copper Usage Relationship</button>
       </nav>
 
       <div id="modelTab" class="tab-panel">
@@ -284,8 +284,8 @@
           </article>
 
           <article class="source-card">
-            <h3>Regression Diagnostic</h3>
-            <p>Diagnostic tests of ICSG world refined usage against World Bank macro data. The Goldman-style rule-of-thumb test uses total world real GDP growth, not GDP per capita. It is still not used for forecast weights because annual fit is moderate and copper-specific shocks matter.</p>
+            <h3>GDP-Copper Diagnostic</h3>
+            <p>Diagnostic tests of ICSG world refined usage against World Bank macro data. The rule-of-thumb test uses total world real GDP growth, not GDP per capita. It is still not used for forecast weights because annual fit is moderate and copper-specific shocks matter.</p>
             <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
             <a href="../outputs/copper_gdp_relationship_diagnostics.csv" target="_blank" rel="noreferrer">GDP relationship diagnostics</a>
@@ -429,62 +429,39 @@
       <section id="regressionTab" class="tab-panel is-hidden" aria-labelledby="regressionHeading">
         <section class="panel regression-hero">
           <div class="panel-header">
-            <h2 id="regressionHeading">Regression Diagnostic</h2>
+            <h2 id="regressionHeading">GDP-Copper Usage Relationship</h2>
             <span class="badge">Diagnostic only</span>
           </div>
-          <p class="regression-lede">This tab tests the GDP-copper relationship directly. The stronger relationship shows up in long-run levels and in the slope of annual world-GDP growth. The weak R-squared problem comes from year-to-year copper-specific noise, not from GDP being irrelevant.</p>
-          <div class="regression-metrics" aria-label="Regression summary metrics">
+          <p class="regression-lede">This page answers one question: does world GDP explain refined copper usage? The answer is yes over the long run, and partly year to year. The annual rule-of-thumb slope is useful, but GDP alone does not explain most short-term copper demand moves.</p>
+          <div class="regression-metrics" aria-label="GDP copper relationship metrics">
             <article class="metric compact">
-              <span>GDP Rule Slope</span>
-              <strong id="regressionR2">--</strong>
+              <span>Rule Slope</span>
+              <strong id="relationshipRuleSlope">--</strong>
               <small>copper pp per 1 pp GDP</small>
             </article>
             <article class="metric compact">
-              <span>Sample</span>
-              <strong id="regressionSample">--</strong>
-              <small id="regressionObservationCount">-- observations</small>
+              <span>Annual Rule R²</span>
+              <strong id="relationshipRuleR2">--</strong>
+              <small id="relationshipSample">--</small>
             </article>
-            <article class="metric compact accent">
-              <span>Model Use</span>
-              <strong>Not used</strong>
-              <small>scenario weights remain assumptions</small>
+            <article class="metric compact">
+              <span>Long-Run R²</span>
+              <strong id="relationshipLongRunR2">--</strong>
+              <small>log levels, scale relationship</small>
             </article>
           </div>
         </section>
 
         <section class="regression-grid" aria-label="Regression details">
-          <article class="panel wide model-comparison-panel">
-            <div class="panel-header">
-              <h2>Model Comparison</h2>
-              <span class="badge">Annual growth</span>
-            </div>
-            <div class="compact-table-wrap">
-              <table class="compact-table regression-table">
-                <thead>
-                  <tr>
-                    <th>Model</th>
-                    <th>Equation</th>
-                    <th>R-squared</th>
-                    <th>Intercept</th>
-                    <th>Key coefficient</th>
-                    <th>Read-through</th>
-                  </tr>
-                </thead>
-                <tbody id="regressionModelRows"></tbody>
-              </table>
-            </div>
-            <p class="panel-note">The no-intercept world-GDP row is the closest version of the Goldman-style rule-of-thumb. The 5-year CAGR row is the smoother cycle-level version.</p>
-          </article>
-
           <article class="panel wide relationship-panel">
             <div class="panel-header">
-              <h2>Why The R-Squared Looks Weak</h2>
-              <span class="badge">Investigation</span>
+              <h2>What The Evidence Says</h2>
+              <span class="badge">Main read-through</span>
             </div>
             <div class="relationship-summary">
-              <p>The strongest empirical relationship is the long-run scale relationship: bigger world GDP goes with bigger copper usage. That log-level test has very high R-squared, but it mostly reflects decades of shared upward trend.</p>
-              <p>For annual growth, the useful takeaway is the slope, not the R-squared. The public-data no-intercept test gives about 0.93 copper-demand percentage points for each 1 percentage point move in world real GDP growth, which is close to the Goldman-style rule you quoted.</p>
-              <p>Quarterly data would be the better test. High-frequency macro proxies are easier to source than a matching global refined-copper-usage history. ICSG says its monthly bulletin/statistical database covers usage, stocks, prices, and trade, but the dashboard cannot reproduce that without access to the underlying database.</p>
+              <p><strong>Long-run:</strong> world GDP and copper usage move together strongly because both grow with industrial scale. The log-level test is high R², but that mostly reflects the long-term upward trend.</p>
+              <p><strong>Annual growth:</strong> the no-intercept slope is about 0.93. That supports the rule that a 1 pp GDP-growth move maps to roughly a 0.9 pp copper-usage-growth move.</p>
+              <p><strong>Short-term noise:</strong> annual R² is low because copper usage also moves with China cycles, inventories, prices, substitution, policy, scrap availability, and sector mix.</p>
             </div>
             <div class="compact-table-wrap">
               <table class="compact-table relationship-table">
@@ -510,68 +487,34 @@
               <span class="badge">Fitted line</span>
             </div>
             <div id="regressionPlotGrid" class="regression-plot-grid" aria-label="Regression scatterplots with fitted lines"></div>
-            <p class="panel-note">Each scatterplot uses the same data and coefficients as the model comparison table. The multivariate model is shown as actual versus fitted because it has multiple x-axis drivers.</p>
+            <p class="panel-note">Each scatterplot uses the same data and coefficients as the evidence table. The multivariate model is shown as actual versus fitted because it has multiple x-axis drivers.</p>
           </article>
 
-          <article class="panel">
+          <article class="panel relationship-method-panel">
             <div class="panel-header">
-              <h2>Regression Result</h2>
-              <span class="badge">OLS + diagnostic shares</span>
-            </div>
-            <div class="compact-table-wrap">
-              <table class="compact-table regression-table">
-                <thead>
-                  <tr>
-                    <th>Driver</th>
-                    <th>OLS coefficient</th>
-                    <th>Standardized beta</th>
-                    <th>Diagnostic LMG share</th>
-                    <th>Interpretation</th>
-                  </tr>
-                </thead>
-                <tbody id="regressionSummaryRows"></tbody>
-              </table>
-            </div>
-            <p class="panel-note">The LMG share decomposes the regression's explained variance across predictors. Since the overall R-squared is weak, these shares are not forecast weights.</p>
-          </article>
-
-          <article class="panel">
-            <div class="panel-header">
-              <h2>Equations Tested</h2>
-              <span class="badge">OLS diagnostics</span>
-            </div>
-            <div class="formula-block">
-              <code>refined usage growth = world real GDP growth + error</code>
-            </div>
-            <div class="formula-block">
-              <code>refined usage growth = intercept + world real GDP growth + error</code>
-            </div>
-            <div class="formula-block">
-              <code>refined usage growth = intercept + GDP per capita growth + error</code>
-            </div>
-            <div class="formula-block">
-              <code>refined usage growth = intercept + industry activity growth + GDP per capita growth + population growth + error</code>
+              <h2>How To Read This</h2>
+              <span class="badge">Interview notes</span>
             </div>
             <dl class="method-list">
               <div>
-                <dt>Dependent variable</dt>
-                <dd>Annual growth in world refined copper usage from the ICSG World Copper Factbook historical annex.</dd>
+                <dt>Log levels</dt>
+                <dd>Use this to say copper usage scales with the size of the world economy. Do not present it as a clean annual forecast.</dd>
               </div>
               <div>
-                <dt>Independent variables</dt>
-                <dd>World Bank world real GDP growth for the rule-of-thumb tests, plus GDP-per-capita, industry-activity, and population growth for the diagnostic driver comparison.</dd>
+                <dt>No-intercept annual growth</dt>
+                <dd>Use this for the rule-of-thumb: if GDP growth changes by 1 percentage point, copper usage growth changes by about 0.93 percentage points.</dd>
               </div>
               <div>
-                <dt>Regression method</dt>
-                <dd id="regressionMethod">OLS diagnostics using the available overlapping public history.</dd>
+                <dt>Low annual R²</dt>
+                <dd>Use this to explain humility: GDP matters, but copper has many commodity-specific short-term drivers.</dd>
               </div>
             </dl>
           </article>
 
           <article class="panel">
             <div class="panel-header">
-              <h2>How The Dataset Is Built</h2>
-              <span class="badge">Reproducible CSV</span>
+              <h2>Data & Method</h2>
+              <span class="badge">Reproducible</span>
             </div>
             <ol class="method-steps">
               <li>Transcribe annual world mine production, refined production, and refined usage from the ICSG Factbook annex for 1960-2024.</li>
@@ -580,65 +523,6 @@
               <li>Calculate GDP per capita as real GDP divided by population.</li>
               <li>Convert usage and macro variables into growth rates where each test has overlapping data. The world-GDP sample runs from 1961-2024. The multivariate industry/GDP-per-capita sample starts in 1992 because World Bank world industry-share data begins in 1991.</li>
             </ol>
-          </article>
-
-          <article class="panel">
-            <div class="panel-header">
-              <h2>Statistical Considerations</h2>
-              <span class="badge">Why not use it</span>
-            </div>
-            <ul class="consideration-list">
-              <li>Better GDP test: using total world real GDP growth gives annual R-squared of <strong id="regressionR2Text">--</strong>, materially better than GDP per capita alone.</li>
-              <li>Rule-of-thumb result: when the intercept is forced to zero, a 1 percentage point move in world real GDP growth maps to about 0.93 percentage points of world refined copper usage growth.</li>
-              <li>Cycle smoothing helps: using 5-year CAGRs raises the fit, which suggests the GDP link is clearer over economic cycles than in single-year changes.</li>
-              <li>Trend versus growth: log levels show a very strong long-run relationship, but growth regressions are the harder and more relevant forecasting test.</li>
-              <li>Quarterly limitation: the public ICSG site lists monthly copper bulletins and an online statistical database, but full historical monthly/quarterly usage data is not available here as an open CSV.</li>
-              <li>Predictor overlap: <code>GDP = GDP per capita * population</code>, so population is mechanically related to GDP per capita.</li>
-              <li>Industry activity overlap: <code>industry activity = GDP * industry share</code>, so the industry driver already contains the GDP component.</li>
-              <li>Global time-series sample: the regression has a small annual sample and no country-level panel variation.</li>
-              <li>Missing copper-specific drivers: prices, substitution, sector mix, grid investment, China property cycles, policy, and inventory changes are not included.</li>
-            </ul>
-          </article>
-
-          <article class="panel wide">
-            <div class="panel-header">
-              <h2>World GDP Dataset Preview</h2>
-              <span id="regressionDatasetBadge" class="badge">--</span>
-            </div>
-            <div class="compact-table-wrap">
-              <table class="compact-table regression-table">
-                <thead>
-                  <tr>
-                    <th>Year</th>
-                    <th>Refined usage growth</th>
-                    <th>World real GDP growth</th>
-                    <th>Refined usage</th>
-                  </tr>
-                </thead>
-                <tbody id="regressionGdpDatasetRows"></tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="panel wide">
-            <div class="panel-header">
-              <h2>Driver Dataset Preview</h2>
-              <span class="badge">shorter sample</span>
-            </div>
-            <div class="compact-table-wrap">
-              <table class="compact-table regression-table">
-                <thead>
-                  <tr>
-                    <th>Year</th>
-                    <th>Refined usage growth</th>
-                    <th>Industry activity growth</th>
-                    <th>GDP per capita growth</th>
-                    <th>Population growth</th>
-                  </tr>
-                </thead>
-                <tbody id="regressionDatasetRows"></tbody>
-              </table>
-            </div>
           </article>
 
           <article class="panel">
@@ -681,6 +565,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-gdp-diagnostics"></script>
+    <script src="./app.js?v=2026-07-11-gdp-copper-cleanup"></script>
   </body>
 </html>

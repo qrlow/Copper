@@ -1074,20 +1074,6 @@ input[type="range"] {
   line-height: 1.45;
 }
 
-.model-comparison-panel .regression-table {
-  min-width: 1180px;
-}
-
-.model-comparison-panel th:nth-child(2),
-.model-comparison-panel td:nth-child(2) {
-  min-width: 320px;
-}
-
-.model-comparison-panel th:nth-child(6),
-.model-comparison-panel td:nth-child(6) {
-  min-width: 340px;
-}
-
 .regression-plot-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1169,26 +1155,6 @@ input[type="range"] {
   font-weight: 700;
 }
 
-.formula-block {
-  margin-bottom: 14px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #faf9f6;
-}
-
-.formula-block + .formula-block {
-  margin-top: 10px;
-}
-
-.formula-block code {
-  color: var(--ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.45;
-  white-space: normal;
-}
-
 .method-list {
   display: grid;
   gap: 12px;
@@ -1213,8 +1179,7 @@ input[type="range"] {
   line-height: 1.45;
 }
 
-.method-steps,
-.consideration-list {
+.method-steps {
   display: grid;
   gap: 10px;
   margin: 0;
@@ -1222,12 +1187,6 @@ input[type="range"] {
   color: #4d4942;
   font-size: 13px;
   line-height: 1.48;
-}
-
-.consideration-list code {
-  color: var(--ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
 }
 
 .source-card.embedded {
