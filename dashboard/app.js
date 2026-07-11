@@ -19,12 +19,15 @@ const SCENARIOS = [
   },
 ];
 
+const DATA_VERSION = "2026-07-11-driver-breakdowns";
+
 function scenarioFiles(id) {
+  const version = `?v=${DATA_VERSION}`;
   return {
-    config: `/config/${id}.json`,
-    forecast: `/outputs/${id}_forecast.csv`,
-    regional: `/outputs/${id}_regional_demand.csv`,
-    mine: `/outputs/${id}_mine_supply_by_country.csv`,
+    config: `/config/${id}.json${version}`,
+    forecast: `/outputs/${id}_forecast.csv${version}`,
+    regional: `/outputs/${id}_regional_demand.csv${version}`,
+    mine: `/outputs/${id}_mine_supply_by_country.csv${version}`,
   };
 }
 
@@ -151,6 +154,10 @@ function formatBalance(value) {
   return `${formatKt(Math.abs(value))} kt ${value < 0 ? "deficit" : "surplus"}`;
 }
 
+function clip(value, lower, upper) {
+  return Math.min(Math.max(value, lower), upper);
+}
+
 function balanceClass(value) {
   if (value < -100) return "deficit";
   if (value > 100) return "surplus";
@@ -176,6 +183,13 @@ function scenarioRowsForYear(state, year) {
       cumulativeBalance: cumulativeBalance(loadedScenario, year),
     };
   });
+}
+
+function weightedAverage(rows, valueAccessor, weightAccessor = (row) => row.demand_kt) {
+  const totalWeight = rows.reduce((sum, row) => sum + Number(weightAccessor(row) || 0), 0);
+  if (totalWeight === 0) return 0;
+  return rows.reduce((sum, row) => sum + Number(valueAccessor(row) || 0) * weightAccessor(row), 0) /
+    totalWeight;
 }
 
 function extent(values) {
@@ -410,6 +424,137 @@ function renderDemandSupplyBreakdown(forecastRow, regionalRows) {
       color: supplyBreakdownColors["Secondary refined"],
     },
   ]);
+}
+
+function renderFactorRows(containerId, rows) {
+  const maxAbs = Math.max(...rows.map((row) => Math.abs(row.value)), 0.001);
+  document.getElementById(containerId).innerHTML = rows
+    .map((row) => {
+      const width = Math.max((Math.abs(row.value) / maxAbs) * 48, 1);
+      const left = row.value < 0 ? 50 - width : 50;
+      const tone = row.value < -0.0001 ? "negative" : "positive";
+      return `
+        <div class="factor-row">
+          <div class="factor-copy">
+            <strong>${row.label}</strong>
+            <span>${row.detail}</span>
+          </div>
+          <span class="factor-bar">
+            <span class="factor-zero"></span>
+            <span class="factor-fill ${tone}" style="left:${left}%;width:${width}%"></span>
+          </span>
+          <strong class="factor-value ${tone}">${formatSignedPct(row.value)}</strong>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderFactorBreakdowns(forecastRow, regionalRows, config) {
+  const weightedDemandGrowth = weightedAverage(regionalRows, (row) => row.growth_rate);
+  const demandRows = [
+    {
+      label: "Industry activity",
+      detail: `industry weight ${formatPct(config.demand.driver_weights.industry_value_added, 0)}`,
+      value: weightedAverage(regionalRows, (row) => row.industry_contribution),
+    },
+    {
+      label: "GDP per capita",
+      detail: `income weight ${formatPct(config.demand.driver_weights.gdp_per_capita, 0)}`,
+      value: weightedAverage(regionalRows, (row) => row.gdp_per_capita_contribution),
+    },
+    {
+      label: "Population",
+      detail: `population weight ${formatPct(config.demand.driver_weights.population, 0)}`,
+      value: weightedAverage(regionalRows, (row) => row.population_contribution),
+    },
+    {
+      label: "Energy-transition bonus",
+      detail: "weighted regional transition assumption",
+      value: weightedAverage(regionalRows, (row) => row.transition_bonus),
+    },
+    {
+      label: "Scenario shock",
+      detail: config.demand.scenario_growth_shock === 0 ? "no additional shock" : "scenario stress adjustment",
+      value: Number(config.demand.scenario_growth_shock),
+    },
+  ];
+  const clipAdjustment = weightedAverage(regionalRows, (row) => row.clip_adjustment);
+  if (Math.abs(clipAdjustment) > 0.0001) {
+    demandRows.push({
+      label: "Growth cap/floor adjustment",
+      detail: "keeps regional demand growth inside scenario bounds",
+      value: clipAdjustment,
+    });
+  }
+
+  const recentSupplyGrowth =
+    forecastRow.primary_supply_growth -
+    Number(config.supply.project_pipeline_growth) +
+    Number(config.supply.disruption_loss);
+  const primaryRows = [
+    {
+      label: "Recent supply growth",
+      detail: "USGS mine-production growth, clipped by scenario bounds",
+      value: recentSupplyGrowth,
+    },
+    {
+      label: "Project pipeline growth",
+      detail: "scenario assumption for added mine/refinery supply",
+      value: Number(config.supply.project_pipeline_growth),
+    },
+    {
+      label: "Disruption loss",
+      detail: "subtracted from primary supply growth",
+      value: -Number(config.supply.disruption_loss),
+    },
+  ];
+
+  const secondaryDemandLink =
+    Number(config.secondary_supply.demand_link) * weightedDemandGrowth;
+  const rawSecondaryGrowth = secondaryDemandLink + Number(config.secondary_supply.collection_growth);
+  const secondaryClipAdjustment =
+    clip(
+      rawSecondaryGrowth,
+      Number(config.secondary_supply.growth_floor),
+      Number(config.secondary_supply.growth_cap),
+    ) - rawSecondaryGrowth;
+  const secondaryRows = [
+    {
+      label: "Demand link * demand growth",
+      detail: `${formatPct(config.secondary_supply.demand_link, 0)} * ${formatSignedPct(
+        weightedDemandGrowth,
+      )}`,
+      value: secondaryDemandLink,
+    },
+    {
+      label: "Collection growth",
+      detail: "scrap/recycling collection improvement",
+      value: Number(config.secondary_supply.collection_growth),
+    },
+  ];
+  if (Math.abs(secondaryClipAdjustment) > 0.0001) {
+    secondaryRows.push({
+      label: "Growth cap/floor adjustment",
+      detail: "keeps secondary supply growth inside scenario bounds",
+      value: secondaryClipAdjustment,
+    });
+  }
+
+  document.getElementById("demandFactorBadge").textContent = `${formatSignedPct(
+    weightedDemandGrowth,
+  )} annual`;
+  document.getElementById("supplyFactorBadge").textContent =
+    `primary ${formatSignedPct(forecastRow.primary_supply_growth)}, secondary ${formatSignedPct(
+      clip(
+        rawSecondaryGrowth,
+        Number(config.secondary_supply.growth_floor),
+        Number(config.secondary_supply.growth_cap),
+      ),
+    )}`;
+  renderFactorRows("demandFactorRows", demandRows);
+  renderFactorRows("primaryFactorRows", primaryRows);
+  renderFactorRows("secondaryFactorRows", secondaryRows);
 }
 
 function updateMetrics(row) {
@@ -768,6 +913,7 @@ function render(state) {
   renderScenarioExplanation(state);
   updateMetrics(selectedForecast);
   renderDemandSupplyBreakdown(selectedForecast, selectedRegional);
+  renderFactorBreakdowns(selectedForecast, selectedRegional, scenario.config);
   renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
   renderRegionalDemand(selectedRegional);

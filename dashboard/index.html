@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-driver-breakdowns" />
   </head>
   <body>
     <main class="app-shell">
@@ -150,6 +150,33 @@
         </article>
       </section>
 
+      <section class="factor-grid" aria-label="Demand and supply factor breakdown">
+        <article class="panel factor-panel">
+          <div class="panel-header">
+            <h2>Demand Growth Drivers</h2>
+            <span id="demandFactorBadge" class="badge">--</span>
+          </div>
+          <div id="demandFactorRows" class="factor-list"></div>
+          <p class="panel-note">Weighted annual demand growth is built from industry activity, GDP per capita, population, energy-transition bonus, and scenario shock.</p>
+        </article>
+
+        <article class="panel factor-panel">
+          <div class="panel-header">
+            <h2>Supply Growth Drivers</h2>
+            <span id="supplyFactorBadge" class="badge">--</span>
+          </div>
+          <div class="factor-equation">
+            <h3>Primary refined</h3>
+            <div id="primaryFactorRows" class="factor-list"></div>
+          </div>
+          <div class="factor-equation">
+            <h3>Secondary refined</h3>
+            <div id="secondaryFactorRows" class="factor-list"></div>
+          </div>
+          <p class="panel-note">Supply growth drivers are annual formula assumptions applied after the 2024 base year.</p>
+        </article>
+      </section>
+
       <section class="content-grid">
         <article class="panel wide">
           <div class="panel-header">
@@ -277,6 +304,6 @@
       </section>
     </main>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=2026-07-11-driver-breakdowns"></script>
   </body>
 </html>

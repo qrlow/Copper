@@ -144,6 +144,7 @@ def estimate_regional_demand_growth(
             + float(region_config["transition_growth_bonus"])
             + shock
         )
+        demand_growth = _clip(raw_growth, floor, cap)
         rows.append(
             {
                 "region": region,
@@ -151,7 +152,17 @@ def estimate_regional_demand_growth(
                 "industry_growth": growth["industry"],
                 "gdp_per_capita_growth": growth["gdp_per_capita"],
                 "population_growth": growth["population"],
-                "demand_growth": _clip(raw_growth, floor, cap),
+                "industry_contribution": float(weights["industry_value_added"])
+                * growth["industry"],
+                "gdp_per_capita_contribution": float(weights["gdp_per_capita"])
+                * growth["gdp_per_capita"],
+                "population_contribution": float(weights["population"])
+                * growth["population"],
+                "transition_bonus": float(region_config["transition_growth_bonus"]),
+                "scenario_shock": shock,
+                "raw_demand_growth": raw_growth,
+                "clip_adjustment": demand_growth - raw_growth,
+                "demand_growth": demand_growth,
             }
         )
     return pd.DataFrame(rows)
@@ -204,6 +215,7 @@ def run_model(
         for region, cfg in demand_config["regions"].items()
     }
     growth_by_region = regional_growth.set_index("region")["demand_growth"].to_dict()
+    growth_detail_by_region = regional_growth.set_index("region").to_dict("index")
 
     global_rows: list[dict[str, object]] = []
     primary_refined = float(supply_config["refinery_production_kt"]) * float(
@@ -243,6 +255,25 @@ def run_model(
                     "region": region,
                     "demand_kt": demand_kt,
                     "growth_rate": growth_by_region[region],
+                    "industry_contribution": growth_detail_by_region[region][
+                        "industry_contribution"
+                    ],
+                    "gdp_per_capita_contribution": growth_detail_by_region[region][
+                        "gdp_per_capita_contribution"
+                    ],
+                    "population_contribution": growth_detail_by_region[region][
+                        "population_contribution"
+                    ],
+                    "transition_bonus": growth_detail_by_region[region][
+                        "transition_bonus"
+                    ],
+                    "scenario_shock": growth_detail_by_region[region]["scenario_shock"],
+                    "raw_demand_growth": growth_detail_by_region[region][
+                        "raw_demand_growth"
+                    ],
+                    "clip_adjustment": growth_detail_by_region[region][
+                        "clip_adjustment"
+                    ],
                 }
             )
 
