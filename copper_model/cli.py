@@ -64,13 +64,14 @@ def estimate_weights_command(args: argparse.Namespace) -> int:
     for path in paths:
         print(f"wrote {path}")
 
-    fit = outputs.fit.iloc[0]
+    first_fit = outputs.fit.iloc[0]
     print(
-        "driver-weight regression "
-        f"{int(fit['sample_start_year'])}-{int(fit['sample_end_year'])}, "
-        f"observations={int(fit['observations'])}, "
-        f"r_squared={fit['r_squared']:.3f}"
+        "demand regression diagnostics "
+        f"{int(first_fit['sample_start_year'])}-{int(first_fit['sample_end_year'])}, "
+        f"observations={int(first_fit['observations'])}"
     )
+    for fit in outputs.fit.itertuples(index=False):
+        print(f"  {fit.model_id}: r_squared={fit.r_squared:.3f}")
     for row in outputs.summary.itertuples(index=False):
         print(f"  {row.model_field}: diagnostic share={row.diagnostic_lmg_share:.3f}")
     return 0

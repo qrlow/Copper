@@ -28,7 +28,7 @@ Outputs are written to `outputs/`:
 
 - `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
 - `demand_driver_regression_summary.csv`: OLS coefficients and diagnostic relative-importance shares.
-- `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics.
+- `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics for the multivariate and GDP-per-capita-only regressions.
 - `base_case_forecast.csv`: annual global refined copper balance.
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
@@ -59,7 +59,7 @@ regional demand growth =
 
 The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
 
-Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it regresses annual global refined copper usage growth from the ICSG Factbook on World Bank world industry-activity, GDP-per-capita, and population growth. The diagnostic regression has weak fit and overlapping predictors, so its relative-importance shares are not used as the forecast weights. In growth terms, GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share, so the drivers are mechanically entangled.
+Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests annual global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard shows both a GDP-per-capita-only regression and a multivariate macro regression. These diagnostics have weak fit and overlapping predictors, so they are not used as forecast weights. In growth terms, GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share, so the multivariate drivers are mechanically entangled.
 
 Supply is split into primary and secondary refined copper:
 

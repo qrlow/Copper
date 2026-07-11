@@ -17,6 +17,7 @@ PREDICTORS = [
     "gdp_per_capita_growth",
     "population_growth",
 ]
+GDP_PER_CAPITA_ONLY = ["gdp_per_capita_growth"]
 
 MODEL_WEIGHT_FIELDS = {
     "industry_activity_growth": "industry_value_added",
@@ -136,6 +137,8 @@ def estimate_driver_weights(
     lmg_total = sum(max(0.0, value) for value in lmg.values())
     if lmg_total <= 0:
         raise ValueError("Regression did not produce positive relative importance.")
+    gdp_only_coefficients, gdp_only_r_squared = _ols(dataset, GDP_PER_CAPITA_ONLY)
+    gdp_only_standardized = _standardized_coefficients(dataset, GDP_PER_CAPITA_ONLY)
 
     rows: list[dict[str, float | str]] = []
     for predictor in PREDICTORS:
@@ -150,18 +153,50 @@ def estimate_driver_weights(
             }
         )
 
+    common_fit = {
+        "dependent_variable": "refined_usage_growth",
+        "window_years": window_years,
+        "observations": len(dataset),
+        "sample_start_year": int(dataset["year"].min()),
+        "sample_end_year": int(dataset["year"].max()),
+    }
     fit = pd.DataFrame(
         [
             {
+                **common_fit,
+                "model_id": "multivariate_macro",
+                "model_name": "Multivariate macro diagnostic",
                 "method": "OLS with intercept; diagnostic LMG relative R-squared shares",
-                "dependent_variable": "refined_usage_growth",
-                "window_years": window_years,
-                "observations": len(dataset),
-                "sample_start_year": int(dataset["year"].min()),
-                "sample_end_year": int(dataset["year"].max()),
+                "equation": (
+                    "refined_usage_growth = intercept + industry_activity_growth "
+                    "+ gdp_per_capita_growth + population_growth + error"
+                ),
+                "predictors": ";".join(PREDICTORS),
                 "r_squared": r_squared,
                 "intercept": coefficients["intercept"],
-            }
+                "gdp_per_capita_coefficient": coefficients["gdp_per_capita_growth"],
+                "gdp_per_capita_standardized_beta": standardized[
+                    "gdp_per_capita_growth"
+                ],
+            },
+            {
+                **common_fit,
+                "model_id": "gdp_per_capita_only",
+                "model_name": "GDP per capita only",
+                "method": "OLS with intercept",
+                "equation": (
+                    "refined_usage_growth = intercept + gdp_per_capita_growth + error"
+                ),
+                "predictors": "gdp_per_capita_growth",
+                "r_squared": gdp_only_r_squared,
+                "intercept": gdp_only_coefficients["intercept"],
+                "gdp_per_capita_coefficient": gdp_only_coefficients[
+                    "gdp_per_capita_growth"
+                ],
+                "gdp_per_capita_standardized_beta": gdp_only_standardized[
+                    "gdp_per_capita_growth"
+                ],
+            },
         ]
     )
 

@@ -944,6 +944,10 @@ input[type="range"] {
   background: #faf9f6;
 }
 
+.formula-block + .formula-block {
+  margin-top: 10px;
+}
+
 .formula-block code {
   color: var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

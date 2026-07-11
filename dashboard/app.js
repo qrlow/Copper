@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-regression-tab";
+const DATA_VERSION = "2026-07-11-gdppc-regression";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -930,22 +930,46 @@ function regressionInterpretation(predictor) {
   }[predictor] ?? "";
 }
 
+function regressionModelReadthrough(modelId) {
+  return {
+    gdp_per_capita_only:
+      "Cleaner single-driver test, but weak fit. It supports keeping GDP per capita as a useful context variable, not as a standalone demand model.",
+    multivariate_macro:
+      "Adds more macro information but still has weak fit and overlapping predictors, so it remains diagnostic only.",
+  }[modelId] ?? "Diagnostic only.";
+}
+
+function compactEquation(equation) {
+  return String(equation)
+    .replaceAll("refined_usage_growth", "usage growth")
+    .replaceAll("gdp_per_capita_growth", "GDP/capita growth")
+    .replaceAll("industry_activity_growth", "industry growth")
+    .replaceAll("population_growth", "population growth");
+}
+
 function renderRegressionTab(regression) {
-  const fit = regression.fit;
+  const fitRows = regression.fit;
+  const multivariateFit =
+    fitRows.find((row) => row.model_id === "multivariate_macro") ?? fitRows[0];
+  const gdpOnlyFit =
+    fitRows.find((row) => row.model_id === "gdp_per_capita_only") ?? multivariateFit;
   const summary = regression.summary;
   const dataset = regression.dataset;
-  const sampleText = `${Math.round(fit.sample_start_year)}-${Math.round(fit.sample_end_year)}`;
+  const sampleText = `${Math.round(gdpOnlyFit.sample_start_year)}-${Math.round(
+    gdpOnlyFit.sample_end_year,
+  )}`;
 
-  document.getElementById("regressionR2").textContent = formatNumber(fit.r_squared, 3);
-  document.getElementById("regressionR2Text").textContent = formatNumber(fit.r_squared, 3);
+  document.getElementById("regressionR2").textContent = formatNumber(
+    gdpOnlyFit.r_squared,
+    3,
+  );
+  document.getElementById("regressionR2Text").textContent = formatNumber(
+    gdpOnlyFit.r_squared,
+    3,
+  );
   document.getElementById("regressionSample").textContent = sampleText;
   document.getElementById("regressionObservationCount").textContent =
-    `${Math.round(fit.observations)} observations`;
-  document.getElementById("regressionMethod").textContent =
-    `${fit.method}; dependent variable is ${fit.dependent_variable}; intercept is ${formatNumber(
-      fit.intercept,
-      4,
-    )}.`;
+    `${Math.round(gdpOnlyFit.observations)} observations`;
   document.getElementById("regressionDatasetBadge").textContent =
     `${dataset.length} observations`;
 
@@ -957,6 +981,19 @@ function renderRegressionTab(regression) {
         <td>${formatNumber(row.standardized_beta, 3)}</td>
         <td>${formatPct(row.diagnostic_lmg_share, 1)}</td>
         <td>${regressionInterpretation(row.predictor)}</td>
+      </tr>
+    `)
+    .join("");
+
+  document.getElementById("regressionModelRows").innerHTML = fitRows
+    .map((row) => `
+      <tr>
+        <td>${row.model_name}</td>
+        <td><code>${compactEquation(row.equation)}</code></td>
+        <td>${formatNumber(row.r_squared, 3)}</td>
+        <td>${formatNumber(row.intercept, 4)}</td>
+        <td>${formatNumber(row.gdp_per_capita_coefficient, 3)}</td>
+        <td>${regressionModelReadthrough(row.model_id)}</td>
       </tr>
     `)
     .join("");
@@ -1074,7 +1111,7 @@ async function init() {
     regression: {
       dataset: regressionDataset,
       summary: regressionSummary,
-      fit: regressionFit[0],
+      fit: regressionFit,
     },
     selectedScenarioId: "base_case",
   };

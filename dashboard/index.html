@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-regression-tab" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdppc-regression" />
   </head>
   <body>
     <main class="app-shell">
@@ -335,7 +335,7 @@
           <p class="regression-lede">This regression tests whether public macro drivers can statistically explain annual world refined copper usage growth. The result is useful as a caution: it is not strong enough to calibrate the forecast weights.</p>
           <div class="regression-metrics" aria-label="Regression summary metrics">
             <article class="metric compact">
-              <span>Fit</span>
+              <span>GDP-only Fit</span>
               <strong id="regressionR2">--</strong>
               <small>R-squared</small>
             </article>
@@ -377,11 +377,37 @@
 
           <article class="panel">
             <div class="panel-header">
-              <h2>Equation Tested</h2>
+              <h2>Model Comparison</h2>
               <span class="badge">Annual growth</span>
             </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table regression-table">
+                <thead>
+                  <tr>
+                    <th>Model</th>
+                    <th>Equation</th>
+                    <th>R-squared</th>
+                    <th>Intercept</th>
+                    <th>GDP/capita coefficient</th>
+                    <th>Read-through</th>
+                  </tr>
+                </thead>
+                <tbody id="regressionModelRows"></tbody>
+              </table>
+            </div>
+            <p class="panel-note">The GDP-per-capita-only version is the cleanest version of the test, but it explains less annual usage variation than the full macro diagnostic.</p>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Equations Tested</h2>
+              <span class="badge">OLS with intercept</span>
+            </div>
             <div class="formula-block">
-              <code>refined usage growth = intercept + beta1 * industry activity growth + beta2 * GDP per capita growth + beta3 * population growth + error</code>
+              <code>refined usage growth = intercept + GDP per capita growth + error</code>
+            </div>
+            <div class="formula-block">
+              <code>refined usage growth = intercept + industry activity growth + GDP per capita growth + population growth + error</code>
             </div>
             <dl class="method-list">
               <div>
@@ -394,7 +420,7 @@
               </div>
               <div>
                 <dt>Regression method</dt>
-                <dd id="regressionMethod">--</dd>
+                <dd id="regressionMethod">OLS with intercept. Both models use the same annual 1992-2024 sample.</dd>
               </div>
             </dl>
           </article>
@@ -419,7 +445,7 @@
               <span class="badge">Why not use it</span>
             </div>
             <ul class="consideration-list">
-              <li>Low explanatory power: R-squared is only <strong id="regressionR2Text">--</strong>, so most annual copper usage growth remains unexplained.</li>
+              <li>Low explanatory power: the GDP-per-capita-only R-squared is <strong id="regressionR2Text">--</strong>, so most annual copper usage growth remains unexplained.</li>
               <li>Predictor overlap: <code>GDP = GDP per capita * population</code>, so population is mechanically related to GDP per capita.</li>
               <li>Industry activity overlap: <code>industry activity = GDP * industry share</code>, so the industry driver already contains the GDP component.</li>
               <li>Global time-series sample: the regression has a small annual sample and no country-level panel variation.</li>
@@ -479,6 +505,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-regression-tab"></script>
+    <script src="./app.js?v=2026-07-11-gdppc-regression"></script>
   </body>
 </html>

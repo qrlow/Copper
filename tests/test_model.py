@@ -162,3 +162,7 @@ def test_regression_weights_are_normalized():
     assert round(weights["industry_value_added"], 3) == 0.383
     assert round(weights["gdp_per_capita"], 3) == 0.302
     assert round(weights["population"], 3) == 0.315
+    gdp_only = outputs.fit[outputs.fit["model_id"] == "gdp_per_capita_only"].iloc[0]
+
+    assert round(gdp_only["r_squared"], 3) == 0.098
+    assert round(gdp_only["gdp_per_capita_coefficient"], 3) == 0.466

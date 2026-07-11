@@ -1,2 +1,3 @@
-method,dependent_variable,window_years,observations,sample_start_year,sample_end_year,r_squared,intercept
-OLS with intercept; diagnostic LMG relative R-squared shares,refined_usage_growth,1,33,1992,2024,0.17844932982472217,-0.016493385822377724
+dependent_variable,window_years,observations,sample_start_year,sample_end_year,model_id,model_name,method,equation,predictors,r_squared,intercept,gdp_per_capita_coefficient,gdp_per_capita_standardized_beta
+refined_usage_growth,1,33,1992,2024,multivariate_macro,Multivariate macro diagnostic,OLS with intercept; diagnostic LMG relative R-squared shares,refined_usage_growth = intercept + industry_activity_growth + gdp_per_capita_growth + population_growth + error,industry_activity_growth;gdp_per_capita_growth;population_growth,0.17844932982472217,-0.016493385822377724,0.15833712833059976,0.10654684943860718
+refined_usage_growth,1,33,1992,2024,gdp_per_capita_only,GDP per capita only,OLS with intercept,refined_usage_growth = intercept + gdp_per_capita_growth + error,gdp_per_capita_growth,0.09818412549812816,0.02145465567380029,0.46565341252706305,0.3133434625105944
