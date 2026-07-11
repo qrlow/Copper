@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-gdp-equations";
+const DATA_VERSION = "2026-07-11-gdp-beta-equations";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -960,8 +960,25 @@ function relationshipResultClass(row) {
   return "weak-fit";
 }
 
-function compactRelationshipEquation(equation) {
-  return String(equation || "");
+function compactRelationshipEquation(row) {
+  const yVariable = String(row.y_variable || "").trim();
+  const xVariable = String(row.x_variable || "").trim();
+  const coefficient = Number(row.coefficient);
+  const intercept = Number(row.intercept);
+  if (!yVariable || !xVariable || !Number.isFinite(coefficient)) {
+    return String(row.equation || "");
+  }
+
+  const coefficientText = formatNumber(coefficient, 3);
+  if (!String(row.equation || "").includes("intercept")) {
+    return `${yVariable} = ${coefficientText} * ${xVariable} + error`;
+  }
+
+  const interceptText = Number.isFinite(intercept) ? formatNumber(intercept, 3) : "intercept";
+  const interceptPart = Number.isFinite(intercept)
+    ? `${interceptText} ${coefficient >= 0 ? "+" : "-"} ${formatNumber(Math.abs(coefficient), 3)}`
+    : `${interceptText} + ${coefficientText}`;
+  return `${yVariable} = ${interceptPart} * ${xVariable} + error`;
 }
 
 function renderRelationshipDiagnostics(rows) {
@@ -980,7 +997,7 @@ function renderRelationshipDiagnostics(rows) {
           <td>${Math.round(row.sample_start_year)}-${Math.round(row.sample_end_year)}<br><small>${Math.round(
             row.observations,
           )} observations</small></td>
-          <td><code>${compactRelationshipEquation(row.equation)}</code><br><small>${row.method}</small></td>
+          <td><code>${compactRelationshipEquation(row)}</code><br><small>${row.method}</small></td>
           <td>${relationshipCoefficient(row)}</td>
           <td><strong>${formatNumber(row.r_squared, 3)}</strong></td>
           <td>${row.readthrough}</td>
@@ -1120,7 +1137,7 @@ function renderRegressionPlots(diagnostics, plotPoints) {
             <strong>R² ${formatNumber(diagnostic.r_squared, 3)}</strong>
           </div>
           <div class="scatter-chart">${renderRegressionScatter(plot.plotId, points)}</div>
-          <code class="plot-equation">${compactRelationshipEquation(diagnostic.equation)}</code>
+          <code class="plot-equation">${compactRelationshipEquation(diagnostic)}</code>
           <p>${points[0].plot_note}</p>
         </article>
       `;
