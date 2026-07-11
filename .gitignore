@@ -9,4 +9,6 @@ build/
 dist/
 *.egg-info/
 data/raw/
-outputs/
+outputs/*
+!outputs/*.csv
+!outputs/*.png

@@ -20,14 +20,24 @@ const SCENARIOS = [
 ];
 
 const DATA_VERSION = "2026-07-11-driver-breakdowns";
+const APP_ROOT = new URL("../", window.location.href);
+
+function appUrl(path) {
+  return new URL(path, APP_ROOT).toString();
+}
+
+function versionedAppUrl(path) {
+  const url = new URL(path, APP_ROOT);
+  url.searchParams.set("v", DATA_VERSION);
+  return url.toString();
+}
 
 function scenarioFiles(id) {
-  const version = `?v=${DATA_VERSION}`;
   return {
-    config: `/config/${id}.json${version}`,
-    forecast: `/outputs/${id}_forecast.csv${version}`,
-    regional: `/outputs/${id}_regional_demand.csv${version}`,
-    mine: `/outputs/${id}_mine_supply_by_country.csv${version}`,
+    config: versionedAppUrl(`config/${id}.json`),
+    forecast: versionedAppUrl(`outputs/${id}_forecast.csv`),
+    regional: versionedAppUrl(`outputs/${id}_regional_demand.csv`),
+    mine: versionedAppUrl(`outputs/${id}_mine_supply_by_country.csv`),
   };
 }
 
@@ -64,9 +74,9 @@ const sourceUrls = {
   worldBankGdp: "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD",
   worldBankIndustry: "https://data.worldbank.org/indicator/NV.IND.TOTL.ZS",
   worldBankPopulation: "https://data.worldbank.org/indicator/SP.POP.TOTL",
-  baseConfig: "/config/base_case.json",
-  bullConfig: "/config/bull_case.json",
-  bearConfig: "/config/bear_case.json",
+  baseConfig: appUrl("config/base_case.json"),
+  bullConfig: appUrl("config/bull_case.json"),
+  bearConfig: appUrl("config/bear_case.json"),
 };
 
 function sourceLink(label, url) {
