@@ -68,7 +68,7 @@ const supplyBreakdownColors = {
 const sourceUrls = {
   icsgFactbook: "https://icsg.org/copper-factbook/",
   usgsCopper:
-    "https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf",
+    "https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf",
   ieaCriticalMinerals:
     "https://www.iea.org/reports/global-critical-minerals-outlook-2025",
   worldBankGdp: "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD",
@@ -769,7 +769,7 @@ function renderScenarioExplanation(state) {
     {
       label: "Starting mine/refinery supply",
       source: sourceNote(
-        "USGS Mineral Commodity Summaries 2025 reports 2024 world mine production at 23,000 kt and refinery production at 27,000 kt.",
+        "USGS Mineral Commodity Summaries 2026 reports 2024 world mine production at 23,000 kt and refinery production at 27,600 kt.",
         [sourceLink("USGS copper table", sourceUrls.usgsCopper), ...configLinkItems()],
       ),
       format: (config) =>

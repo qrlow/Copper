@@ -38,7 +38,7 @@
   },
   "supply": {
     "mine_production_kt": 23000.0,
-    "refinery_production_kt": 27000.0,
+    "refinery_production_kt": 27600.0,
     "primary_refined_share": 0.82,
     "recent_growth_floor": -0.005,
     "recent_growth_cap": 0.035,

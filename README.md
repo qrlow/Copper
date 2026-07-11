@@ -5,7 +5,8 @@ Python model for a global refined copper supply-demand balance.
 The model combines public macro feeds with public copper market baselines:
 
 - World Bank API: annual real GDP, industry share of GDP, and population indicators.
-- USGS Mineral Commodity Summaries 2025: global and country mine/refinery production baselines.
+- USGS Mineral Commodity Summaries 2026: updated 2024 world mine/refinery production baseline.
+- USGS Mineral Commodity Summaries 2025: country mine/refinery production seed table.
 - ICSG World Copper Factbook 2025: 2024 refined usage, regional usage, primary/secondary refined production context, capacity trends, supply constraints, and scrap/recycling context.
 
 This is a transparent planning model, not a trading model. It is built to make assumptions visible and easy to change.
@@ -86,10 +87,13 @@ The fetch step downloads:
 
 Seed tables in `data/seed/` are manually transcribed from:
 
+- U.S. Geological Survey, Mineral Commodity Summaries 2026, Copper:
+  `https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf`
 - U.S. Geological Survey, Mineral Commodity Summaries 2025, Copper:
   `https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf`
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
+The global seed combines MCS 2025 history for 2023 with the MCS 2026 2024 update. The 2024 refined-supply baseline now uses the USGS MCS 2026 world refinery production figure of 27,600 kt. The country supply seed remains based on the transcribed MCS 2025 country table.
 
 The main non-USGS assumption sources are:
 

@@ -190,7 +190,7 @@ def run_model(
     if macro is None:
         macro = load_public_data(data_dir)
 
-    seed_global = pd.read_csv(data_dir / "seed" / "usgs_mcs_2025_global_balance.csv")
+    seed_global = pd.read_csv(data_dir / "seed" / "usgs_mcs_global_balance.csv")
     seed_country = pd.read_csv(data_dir / "seed" / "usgs_mcs_2025_country_supply.csv")
 
     base_year = int(config["base_year"])
