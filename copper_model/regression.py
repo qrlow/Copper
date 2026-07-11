@@ -33,6 +33,7 @@ class RegressionOutputs:
     dataset: pd.DataFrame
     gdp_dataset: pd.DataFrame
     plot_points: pd.DataFrame
+    relationship_diagnostics: pd.DataFrame
     summary: pd.DataFrame
     fit: pd.DataFrame
 
@@ -443,11 +444,27 @@ def estimate_driver_weights(
         world_gdp_5y_coefficients=world_gdp_5y_coefficients,
         world_gdp_change_coefficients=world_gdp_change_coefficients,
     )
+    relationship_diagnostics = _build_relationship_diagnostics(
+        data_dir=data_dir,
+        macro=macro,
+        world_gdp_dataset=world_gdp_dataset,
+        world_gdp_5y_dataset=world_gdp_5y_dataset,
+        world_gdp_change_dataset=world_gdp_change_dataset,
+        world_gdp_coefficients=world_gdp_coefficients,
+        world_gdp_r_squared=world_gdp_r_squared,
+        world_gdp_no_intercept_coefficients=world_gdp_no_intercept_coefficients,
+        world_gdp_no_intercept_r_squared=world_gdp_no_intercept_r_squared,
+        world_gdp_5y_coefficients=world_gdp_5y_coefficients,
+        world_gdp_5y_r_squared=world_gdp_5y_r_squared,
+        world_gdp_change_coefficients=world_gdp_change_coefficients,
+        world_gdp_change_r_squared=world_gdp_change_r_squared,
+    )
 
     return RegressionOutputs(
         dataset=dataset,
         gdp_dataset=world_gdp_dataset,
         plot_points=plot_points,
+        relationship_diagnostics=relationship_diagnostics,
         summary=pd.DataFrame(rows),
         fit=fit,
     )
@@ -459,15 +476,269 @@ def write_regression_outputs(outputs: RegressionOutputs, output_dir: Path) -> li
         output_dir / "demand_driver_regression_dataset.csv",
         output_dir / "demand_world_gdp_regression_dataset.csv",
         output_dir / "demand_regression_plot_points.csv",
+        output_dir / "copper_gdp_relationship_diagnostics.csv",
         output_dir / "demand_driver_regression_summary.csv",
         output_dir / "demand_driver_regression_fit.csv",
     ]
     outputs.dataset.to_csv(paths[0], index=False)
     outputs.gdp_dataset.to_csv(paths[1], index=False)
     outputs.plot_points.to_csv(paths[2], index=False)
-    outputs.summary.to_csv(paths[3], index=False)
-    outputs.fit.to_csv(paths[4], index=False)
+    outputs.relationship_diagnostics.to_csv(paths[3], index=False)
+    outputs.summary.to_csv(paths[4], index=False)
+    outputs.fit.to_csv(paths[5], index=False)
     return paths
+
+
+def _build_relationship_diagnostics(
+    data_dir: Path,
+    macro: pd.DataFrame | None,
+    world_gdp_dataset: pd.DataFrame,
+    world_gdp_5y_dataset: pd.DataFrame,
+    world_gdp_change_dataset: pd.DataFrame,
+    world_gdp_coefficients: dict[str, float],
+    world_gdp_r_squared: float,
+    world_gdp_no_intercept_coefficients: dict[str, float],
+    world_gdp_no_intercept_r_squared: float,
+    world_gdp_5y_coefficients: dict[str, float],
+    world_gdp_5y_r_squared: float,
+    world_gdp_change_coefficients: dict[str, float],
+    world_gdp_change_r_squared: float,
+) -> pd.DataFrame:
+    """Summarize the GDP/copper tests behind the dashboard explanation."""
+
+    rows: list[dict[str, float | int | str]] = []
+
+    def append_row(
+        *,
+        test_id: str,
+        test_name: str,
+        data: pd.DataFrame,
+        x_variable: str,
+        y_variable: str,
+        coefficients: dict[str, float],
+        r_squared: float,
+        method: str,
+        readthrough: str,
+    ) -> None:
+        rows.append(
+            {
+                "test_id": test_id,
+                "test_name": test_name,
+                "sample_start_year": int(data["year"].min()),
+                "sample_end_year": int(data["year"].max()),
+                "observations": len(data),
+                "x_variable": x_variable,
+                "y_variable": y_variable,
+                "method": method,
+                "coefficient": coefficients[x_variable],
+                "intercept": coefficients["intercept"],
+                "r_squared": r_squared,
+                "correlation": float(data[[x_variable, y_variable]].corr().iloc[0, 1]),
+                "readthrough": readthrough,
+            }
+        )
+
+    levels = _prepare_world_gdp_level_dataset(data_dir, macro)
+    level_coefficients, level_r_squared = _ols(
+        levels, ["log_world_real_gdp"], target="log_refined_usage"
+    )
+    append_row(
+        test_id="log_levels",
+        test_name="Long-run scale relationship",
+        data=levels,
+        x_variable="log_world_real_gdp",
+        y_variable="log_refined_usage",
+        coefficients=level_coefficients,
+        r_squared=level_r_squared,
+        method="OLS with intercept on log levels",
+        readthrough=(
+            "Very strong relationship because both copper use and real GDP trend "
+            "up over decades; useful for scale, not proof of annual forecast power."
+        ),
+    )
+    append_row(
+        test_id="annual_growth",
+        test_name="Annual growth with intercept",
+        data=world_gdp_dataset,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=world_gdp_coefficients,
+        r_squared=world_gdp_r_squared,
+        method="OLS with intercept on annual growth rates",
+        readthrough=(
+            "GDP matters, but copper-specific cycles and measurement noise leave "
+            "large annual residuals."
+        ),
+    )
+    append_row(
+        test_id="annual_growth_no_intercept",
+        test_name="Rule-of-thumb annual growth",
+        data=world_gdp_dataset,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=world_gdp_no_intercept_coefficients,
+        r_squared=world_gdp_no_intercept_r_squared,
+        method="OLS through origin on annual growth rates",
+        readthrough=(
+            "Closest public-data test of the Goldman-style rule: the slope is near "
+            "0.9 copper-demand percentage points per 1 GDP percentage point."
+        ),
+    )
+    append_row(
+        test_id="five_year_cagr",
+        test_name="Five-year growth smoothing",
+        data=world_gdp_5y_dataset,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=world_gdp_5y_coefficients,
+        r_squared=world_gdp_5y_r_squared,
+        method="OLS with intercept on overlapping 5-year CAGRs",
+        readthrough=(
+            "Smoothing improves the fit, so the GDP link is clearer over cycles "
+            "than in single-year moves."
+        ),
+    )
+    append_row(
+        test_id="growth_rate_change",
+        test_name="GDP slowdown test",
+        data=world_gdp_change_dataset,
+        x_variable="world_real_gdp_growth_change",
+        y_variable="refined_usage_growth_change",
+        coefficients=world_gdp_change_coefficients,
+        r_squared=world_gdp_change_r_squared,
+        method="OLS with intercept on changes in annual growth rates",
+        readthrough=(
+            "Direct slowdown test: changes in GDP growth explain some, but not most, "
+            "of changes in copper usage growth."
+        ),
+    )
+
+    pre_1990 = world_gdp_dataset[world_gdp_dataset["year"] <= 1989]
+    pre_coefficients, pre_r_squared = _ols(pre_1990, WORLD_GDP_ONLY)
+    append_row(
+        test_id="pre_1990_annual_growth",
+        test_name="Annual growth, 1961-1989",
+        data=pre_1990,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=pre_coefficients,
+        r_squared=pre_r_squared,
+        method="OLS with intercept on annual growth rates",
+        readthrough=(
+            "The old industrial-cycle sample has a much stronger fit; this is one "
+            "reason a broad GDP rule can look intuitive."
+        ),
+    )
+
+    post_1990 = world_gdp_dataset[world_gdp_dataset["year"] >= 1990]
+    post_coefficients, post_r_squared = _ols(post_1990, WORLD_GDP_ONLY)
+    append_row(
+        test_id="post_1990_annual_growth",
+        test_name="Annual growth, 1990-2024",
+        data=post_1990,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=post_coefficients,
+        r_squared=post_r_squared,
+        method="OLS with intercept on annual growth rates",
+        readthrough=(
+            "Fit weakens after 1990 as China, sector mix, inventory swings, "
+            "substitution, and policy become more important."
+        ),
+    )
+
+    ex_covid = world_gdp_dataset[~world_gdp_dataset["year"].isin([2020, 2021])]
+    ex_covid_coefficients, ex_covid_r_squared = _ols(ex_covid, WORLD_GDP_ONLY)
+    append_row(
+        test_id="exclude_2020_2021",
+        test_name="Annual growth excluding 2020-2021",
+        data=ex_covid,
+        x_variable="world_real_gdp_growth",
+        y_variable="refined_usage_growth",
+        coefficients=ex_covid_coefficients,
+        r_squared=ex_covid_r_squared,
+        method="OLS with intercept excluding pandemic/reopening years",
+        readthrough=(
+            "Removing the pandemic/reopening years improves fit materially, showing "
+            "that a few copper-specific outliers pull annual R-squared down."
+        ),
+    )
+
+    lag_rows: list[dict[str, float | int]] = []
+    for shift in [-2, -1, 0, 1, 2]:
+        shifted = world_gdp_dataset[
+            ["year", "refined_usage_growth", "world_real_gdp_growth"]
+        ].copy()
+        shifted["world_real_gdp_growth"] = shifted["world_real_gdp_growth"].shift(
+            shift
+        )
+        shifted = shifted.dropna()
+        coefficients, r_squared = _ols(shifted, WORLD_GDP_ONLY)
+        lag_rows.append(
+            {
+                "shift": shift,
+                "coefficient": coefficients["world_real_gdp_growth"],
+                "r_squared": r_squared,
+            }
+        )
+    best_lag = max(lag_rows, key=lambda row: float(row["r_squared"]))
+    rows.append(
+        {
+            "test_id": "lag_check",
+            "test_name": "GDP lead/lag check",
+            "sample_start_year": int(world_gdp_dataset["year"].min()),
+            "sample_end_year": int(world_gdp_dataset["year"].max()),
+            "observations": len(world_gdp_dataset),
+            "x_variable": "world_real_gdp_growth",
+            "y_variable": "refined_usage_growth",
+            "method": "OLS with intercept, GDP shifted -2 to +2 years",
+            "coefficient": float(best_lag["coefficient"]),
+            "intercept": np.nan,
+            "r_squared": float(best_lag["r_squared"]),
+            "correlation": np.nan,
+            "readthrough": (
+                f"Current-year GDP growth is the best lag test in this public annual "
+                f"sample; best shift = {int(best_lag['shift'])} years."
+            ),
+        }
+    )
+
+    return pd.DataFrame(rows)
+
+
+def _prepare_world_gdp_level_dataset(
+    data_dir: Path,
+    macro: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    balance = pd.read_csv(data_dir / "seed" / "icsg_world_copper_balance_1960_2024.csv")
+    macro_data = load_public_data(data_dir) if macro is None else macro
+    if macro_data is None or macro_data.empty:
+        raise ValueError("World Bank macro data is required for GDP level diagnostics.")
+
+    world_macro = macro_data[macro_data["country_code"] == "WLD"].pivot_table(
+        index="year",
+        columns="indicator",
+        values="value",
+        aggfunc="first",
+    )
+    world_macro = world_macro.reset_index()
+
+    joined = balance.merge(world_macro[["year", GDP]], on="year", how="inner")
+    joined = joined.sort_values("year")
+    joined = joined[(joined["refined_usage_kt"] > 0) & (joined[GDP] > 0)].copy()
+    joined["log_refined_usage"] = np.log(joined["refined_usage_kt"])
+    joined["log_world_real_gdp"] = np.log(joined[GDP])
+    if joined.empty:
+        raise ValueError("No overlapping ICSG/World Bank GDP level observations.")
+    return joined[
+        [
+            "year",
+            "refined_usage_kt",
+            GDP,
+            "log_refined_usage",
+            "log_world_real_gdp",
+        ]
+    ]
 
 
 def _build_regression_plot_points(

@@ -193,6 +193,17 @@ def test_regression_weights_are_normalized():
     assert round(world_gdp_rule["r_squared"], 3) == 0.279
     assert round(world_gdp_5y["key_coefficient"], 3) == 0.941
     assert round(world_gdp_5y["r_squared"], 3) == 0.395
+    relationship = outputs.relationship_diagnostics
+    log_levels = relationship[relationship["test_id"] == "log_levels"].iloc[0]
+    rule = relationship[
+        relationship["test_id"] == "annual_growth_no_intercept"
+    ].iloc[0]
+    ex_covid = relationship[relationship["test_id"] == "exclude_2020_2021"].iloc[0]
+
+    assert round(log_levels["coefficient"], 3) == 0.786
+    assert round(log_levels["r_squared"], 3) == 0.986
+    assert round(rule["coefficient"], 3) == 0.931
+    assert round(ex_covid["r_squared"], 3) == 0.453
 
 
 def test_regression_plot_points_cover_all_models():

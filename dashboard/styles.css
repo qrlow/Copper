@@ -1032,6 +1032,48 @@ input[type="range"] {
   min-width: 880px;
 }
 
+.relationship-table {
+  min-width: 1120px;
+}
+
+.relationship-table small {
+  display: inline-block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.relationship-table tr.strong-fit td {
+  background: #f4faf3;
+}
+
+.relationship-table tr.moderate-fit td {
+  background: #f7fbfb;
+}
+
+.relationship-table tr.weak-fit td {
+  background: #fffdf8;
+}
+
+.relationship-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.relationship-summary p {
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf9f6;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .model-comparison-panel .regression-table {
   min-width: 1180px;
 }
@@ -1225,6 +1267,10 @@ input[type="range"] {
   }
 
   .explanation-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .relationship-summary {
     grid-template-columns: 1fr;
   }
 

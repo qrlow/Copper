@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-regression-plots";
+const DATA_VERSION = "2026-07-11-gdp-diagnostics";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -46,6 +46,7 @@ function regressionFiles() {
     dataset: versionedAppUrl("outputs/demand_driver_regression_dataset.csv"),
     gdpDataset: versionedAppUrl("outputs/demand_world_gdp_regression_dataset.csv"),
     plotPoints: versionedAppUrl("outputs/demand_regression_plot_points.csv"),
+    relationshipDiagnostics: versionedAppUrl("outputs/copper_gdp_relationship_diagnostics.csv"),
     summary: versionedAppUrl("outputs/demand_driver_regression_summary.csv"),
     fit: versionedAppUrl("outputs/demand_driver_regression_fit.csv"),
   };
@@ -83,10 +84,13 @@ const supplyBreakdownColors = {
 
 const sourceUrls = {
   icsgFactbook: "https://icsg.org/copper-factbook/",
+  icsgHome: "https://icsg.org/",
   usgsCopper:
     "https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf",
   ieaCriticalMinerals:
     "https://www.iea.org/reports/global-critical-minerals-outlook-2025",
+  marketWatchCopperDemand:
+    "https://www.marketwatch.com/story/how-ai-and-evs-are-boosting-demand-for-copper-fd9ec5db",
   worldBankGdp: "https://data.worldbank.org/indicator/NY.GDP.MKTP.KD",
   worldBankIndustry: "https://data.worldbank.org/indicator/NV.IND.TOTL.ZS",
   worldBankPopulation: "https://data.worldbank.org/indicator/SP.POP.TOTL",
@@ -96,6 +100,7 @@ const sourceUrls = {
   regressionDataset: appUrl("outputs/demand_driver_regression_dataset.csv"),
   regressionGdpDataset: appUrl("outputs/demand_world_gdp_regression_dataset.csv"),
   regressionPlotPoints: appUrl("outputs/demand_regression_plot_points.csv"),
+  relationshipDiagnostics: appUrl("outputs/copper_gdp_relationship_diagnostics.csv"),
   regressionSummary: appUrl("outputs/demand_driver_regression_summary.csv"),
   regressionFit: appUrl("outputs/demand_driver_regression_fit.csv"),
   workbookMarketBalance: appUrl("outputs/workbook_market_balance.csv"),
@@ -980,6 +985,53 @@ function regressionKeyCoefficient(row) {
   return `${label}: ${formatNumber(row.key_coefficient, 3)}`;
 }
 
+function relationshipCoefficient(row) {
+  if (row.test_id === "log_levels") {
+    return `${formatNumber(row.coefficient, 3)} elasticity`;
+  }
+  return `${formatNumber(row.coefficient, 3)} pp / pp`;
+}
+
+function relationshipResultClass(row) {
+  const r2 = Number(row.r_squared);
+  if (r2 >= 0.8) return "strong-fit";
+  if (r2 >= 0.35) return "moderate-fit";
+  return "weak-fit";
+}
+
+function compactRelationshipVariable(variable) {
+  return String(variable)
+    .replaceAll("log_world_real_gdp", "log world GDP")
+    .replaceAll("log_refined_usage", "log refined usage")
+    .replaceAll("world_real_gdp_growth_change", "change in world GDP growth")
+    .replaceAll("refined_usage_growth_change", "change in copper usage growth")
+    .replaceAll("world_real_gdp_growth", "world GDP growth")
+    .replaceAll("refined_usage_growth", "copper usage growth");
+}
+
+function renderRelationshipDiagnostics(rows) {
+  const container = document.getElementById("relationshipDiagnosticRows");
+  container.innerHTML = rows
+    .map((row) => {
+      const fitClass = relationshipResultClass(row);
+      return `
+        <tr class="${fitClass}">
+          <td>${row.test_name}</td>
+          <td>${Math.round(row.sample_start_year)}-${Math.round(row.sample_end_year)}<br><small>${Math.round(
+            row.observations,
+          )} observations</small></td>
+          <td><code>${compactRelationshipVariable(row.y_variable)} ~ ${compactRelationshipVariable(
+            row.x_variable,
+          )}</code><br><small>${row.method}</small></td>
+          <td>${relationshipCoefficient(row)}</td>
+          <td><strong>${formatNumber(row.r_squared, 3)}</strong></td>
+          <td>${row.readthrough}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
 function paddedDomain(values) {
   const finiteValues = values.map(Number).filter(Number.isFinite);
   if (!finiteValues.length) return [0, 1];
@@ -1165,6 +1217,7 @@ function renderRegressionTab(regression) {
     `)
     .join("");
 
+  renderRelationshipDiagnostics(regression.relationshipDiagnostics);
   renderRegressionPlots(fitRows, regression.plotPoints);
 
   document.getElementById("regressionDatasetRows").innerHTML = dataset
@@ -1528,6 +1581,7 @@ async function init() {
     regressionDataset,
     regressionGdpDataset,
     regressionPlotPoints,
+    relationshipDiagnostics,
     regressionSummary,
     regressionFit,
     workbookMarketBalance,
@@ -1551,6 +1605,7 @@ async function init() {
       loadDataset(files.dataset),
       loadDataset(files.gdpDataset),
       loadDataset(files.plotPoints),
+      loadDataset(files.relationshipDiagnostics),
       loadDataset(files.summary),
       loadDataset(files.fit),
       loadDataset(workbookDataFiles.marketBalance),
@@ -1562,6 +1617,7 @@ async function init() {
       dataset: regressionDataset,
       gdpDataset: regressionGdpDataset,
       plotPoints: regressionPlotPoints,
+      relationshipDiagnostics,
       summary: regressionSummary,
       fit: regressionFit,
     },

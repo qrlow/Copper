@@ -29,6 +29,7 @@ Outputs are written to `outputs/`:
 - `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
 - `demand_world_gdp_regression_dataset.csv`: long-history annual ICSG usage and World Bank world real GDP growth dataset.
 - `demand_regression_plot_points.csv`: x/y/fitted values used for dashboard regression scatterplots.
+- `copper_gdp_relationship_diagnostics.csv`: long-run, annual-growth, smoothing, outlier, and lead/lag checks used to explain the GDP/copper relationship.
 - `demand_driver_regression_summary.csv`: OLS coefficients and diagnostic relative-importance shares.
 - `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics for the multivariate, GDP-per-capita-only, and world-GDP regressions.
 - `base_case_forecast.csv`: annual global refined copper balance.
@@ -63,10 +64,13 @@ The macro growth rates are fixed historical CAGRs, not rolling future forecasts.
 
 Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard now shows two kinds of tests:
 
+- A long-run log-level test of refined usage against world real GDP. This has very high R-squared because both series trend upward over decades. It is useful evidence that copper consumption scales with economic activity, but it is not a clean annual forecasting model.
 - World real GDP diagnostics, which are the closest match to the market rule-of-thumb that a 1 percentage point change in world real GDP growth is associated with roughly a 0.9 percentage point change in global copper demand growth. In the 1961-2024 annual public-data sample, the no-intercept slope is about 0.93. With an intercept, annual R-squared is about 0.321. Using 5-year CAGRs raises R-squared to about 0.395.
 - Driver diagnostics using GDP per capita, population, and industry activity. These are weaker and mechanically overlapping: GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share.
 
-These diagnostics are not used as forecast weights. They show that GDP matters, but annual copper usage still depends heavily on copper-specific cycles, China property and grid demand, substitution, scrap response, prices, inventories, policy, and sector mix.
+These diagnostics are not used as forecast weights. They show that GDP matters, but annual copper usage still depends heavily on copper-specific cycles, China property and grid demand, substitution, scrap response, prices, inventories, policy, and sector mix. The strongest annual test is a slope/elasticity read-through, not a high-R-squared forecasting equation.
+
+Quarterly data would be a better way to test cyclical sensitivity, but a reproducible public global quarterly refined-usage history is not available in this repository. ICSG publishes monthly bulletins and maintains an online statistical database covering production, usage, trade, stocks, and prices; that is the right source for a paid or credentialed quarterly version of the analysis.
 
 Supply is split into primary and secondary refined copper:
 
@@ -108,6 +112,8 @@ Seed tables in `data/seed/` are manually transcribed from:
   `https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf`
 - ICSG World Copper Factbook 2025, Annex "World Copper Production and Refined Copper Usage, 1960-2024":
   `https://icsg.org/copper-factbook/`
+- ICSG publications and online statistical database context for monthly/quarterly copper data availability:
+  `https://icsg.org/`
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
 The global seed combines MCS 2025 history for 2023 with the MCS 2026 2024 update. The 2024 refined-supply baseline now uses the USGS MCS 2026 world refinery production figure of 27,600 kt. The country supply seed remains based on the transcribed MCS 2025 country table.

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-regression-plots" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-diagnostics" />
   </head>
   <body>
     <main class="app-shell">
@@ -285,11 +285,13 @@
 
           <article class="source-card">
             <h3>Regression Diagnostic</h3>
-            <p>Diagnostic tests of ICSG world refined usage growth against World Bank macro data. The Goldman-style rule-of-thumb test uses total world real GDP growth, not GDP per capita. It is still not used for forecast weights because fit is moderate and copper-specific shocks matter.</p>
+            <p>Diagnostic tests of ICSG world refined usage against World Bank macro data. The Goldman-style rule-of-thumb test uses total world real GDP growth, not GDP per capita. It is still not used for forecast weights because annual fit is moderate and copper-specific shocks matter.</p>
             <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
+            <a href="../outputs/copper_gdp_relationship_diagnostics.csv" target="_blank" rel="noreferrer">GDP relationship diagnostics</a>
             <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
             <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset</a>
+            <a href="https://icsg.org/" target="_blank" rel="noreferrer">ICSG monthly publications and database context</a>
           </article>
 
           <article class="source-card">
@@ -311,6 +313,7 @@
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
             <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Macro regression dataset</a>
             <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset</a>
+            <a href="../outputs/copper_gdp_relationship_diagnostics.csv" target="_blank" rel="noreferrer">GDP relationship diagnostics</a>
             <a href="../copper_model/model.py" target="_blank" rel="noreferrer">Forecast model code</a>
             <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
             <a href="../copper_model/sources.py" target="_blank" rel="noreferrer">Data fetcher code</a>
@@ -429,7 +432,7 @@
             <h2 id="regressionHeading">Regression Diagnostic</h2>
             <span class="badge">Diagnostic only</span>
           </div>
-          <p class="regression-lede">This tab tests the GDP-copper relationship directly. GDP per capita alone is weak, but total world real GDP growth gives a clearer result: the no-intercept rule-of-thumb slope is close to 0.9, while the fit is still not strong enough to drive the forecast mechanically.</p>
+          <p class="regression-lede">This tab tests the GDP-copper relationship directly. The stronger relationship shows up in long-run levels and in the slope of annual world-GDP growth. The weak R-squared problem comes from year-to-year copper-specific noise, not from GDP being irrelevant.</p>
           <div class="regression-metrics" aria-label="Regression summary metrics">
             <article class="metric compact">
               <span>GDP Rule Slope</span>
@@ -471,6 +474,34 @@
               </table>
             </div>
             <p class="panel-note">The no-intercept world-GDP row is the closest version of the Goldman-style rule-of-thumb. The 5-year CAGR row is the smoother cycle-level version.</p>
+          </article>
+
+          <article class="panel wide relationship-panel">
+            <div class="panel-header">
+              <h2>Why The R-Squared Looks Weak</h2>
+              <span class="badge">Investigation</span>
+            </div>
+            <div class="relationship-summary">
+              <p>The strongest empirical relationship is the long-run scale relationship: bigger world GDP goes with bigger copper usage. That log-level test has very high R-squared, but it mostly reflects decades of shared upward trend.</p>
+              <p>For annual growth, the useful takeaway is the slope, not the R-squared. The public-data no-intercept test gives about 0.93 copper-demand percentage points for each 1 percentage point move in world real GDP growth, which is close to the Goldman-style rule you quoted.</p>
+              <p>Quarterly data would be the better test. High-frequency macro proxies are easier to source than a matching global refined-copper-usage history. ICSG says its monthly bulletin/statistical database covers usage, stocks, prices, and trade, but the dashboard cannot reproduce that without access to the underlying database.</p>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table relationship-table">
+                <thead>
+                  <tr>
+                    <th>Check</th>
+                    <th>Sample</th>
+                    <th>Equation</th>
+                    <th>Slope</th>
+                    <th>R-squared</th>
+                    <th>What it means</th>
+                  </tr>
+                </thead>
+                <tbody id="relationshipDiagnosticRows"></tbody>
+              </table>
+            </div>
+            <p class="panel-note">The exact Goldman sentence is treated here as a rule to test against public data. I could not verify the original note from a public Goldman source.</p>
           </article>
 
           <article class="panel wide regression-plots-panel">
@@ -560,6 +591,8 @@
               <li>Better GDP test: using total world real GDP growth gives annual R-squared of <strong id="regressionR2Text">--</strong>, materially better than GDP per capita alone.</li>
               <li>Rule-of-thumb result: when the intercept is forced to zero, a 1 percentage point move in world real GDP growth maps to about 0.93 percentage points of world refined copper usage growth.</li>
               <li>Cycle smoothing helps: using 5-year CAGRs raises the fit, which suggests the GDP link is clearer over economic cycles than in single-year changes.</li>
+              <li>Trend versus growth: log levels show a very strong long-run relationship, but growth regressions are the harder and more relevant forecasting test.</li>
+              <li>Quarterly limitation: the public ICSG site lists monthly copper bulletins and an online statistical database, but full historical monthly/quarterly usage data is not available here as an open CSV.</li>
               <li>Predictor overlap: <code>GDP = GDP per capita * population</code>, so population is mechanically related to GDP per capita.</li>
               <li>Industry activity overlap: <code>industry activity = GDP * industry share</code>, so the industry driver already contains the GDP component.</li>
               <li>Global time-series sample: the regression has a small annual sample and no country-level panel variation.</li>
@@ -632,15 +665,22 @@
               <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset CSV</a>
               <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset CSV</a>
               <a href="../outputs/demand_regression_plot_points.csv" target="_blank" rel="noreferrer">Regression plot points CSV</a>
+              <a href="../outputs/copper_gdp_relationship_diagnostics.csv" target="_blank" rel="noreferrer">GDP relationship diagnostics CSV</a>
               <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression summary CSV</a>
               <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit CSV</a>
               <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
+            </div>
+            <div class="source-card embedded">
+              <h3>Quarterly Data Check</h3>
+              <p>ICSG publishes monthly copper bulletins and says its statistical database contains production, usage, trade, stocks, and prices. Public articles occasionally quote monthly usage snippets, but that is not enough to build a reproducible quarterly regression.</p>
+              <a href="https://icsg.org/" target="_blank" rel="noreferrer">ICSG publications and statistical database</a>
+              <a href="https://www.marketwatch.com/story/how-ai-and-evs-are-boosting-demand-for-copper-fd9ec5db" target="_blank" rel="noreferrer">Example public article quoting an ICSG monthly usage snippet</a>
             </div>
           </article>
         </section>
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-regression-plots"></script>
+    <script src="./app.js?v=2026-07-11-gdp-diagnostics"></script>
   </body>
 </html>
