@@ -157,7 +157,7 @@
             <span id="demandFactorBadge" class="badge">--</span>
           </div>
           <div id="demandFactorRows" class="factor-list"></div>
-          <p class="panel-note">Weighted annual demand growth is built from industry activity, GDP per capita, population, energy-transition bonus, and scenario shock.</p>
+          <p class="panel-note">Weighted annual demand growth is built from fixed 10-year historical CAGRs for industry activity, GDP per capita, population, plus energy-transition bonus and scenario shock.</p>
         </article>
 
         <article class="panel factor-panel">
@@ -219,6 +219,7 @@
         </div>
         <div class="explanation-copy">
           <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, USGS MCS 2026 2024 world mine/refinery supply, and World Bank macro drivers.</p>
+          <p>The World Bank macro growth rates are fixed historical lookback rates applied across the forecast horizon; they are not rolling future forecasts.</p>
           <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
           <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
         </div>

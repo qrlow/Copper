@@ -2,7 +2,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from copper_model.model import estimate_regional_demand_growth, load_config, run_model
+from copper_model.model import (
+    _macro_growth_for_code,
+    _pivot_macro,
+    estimate_regional_demand_growth,
+    load_config,
+    run_model,
+)
 
 
 def _macro_rows() -> pd.DataFrame:
@@ -48,6 +54,64 @@ def test_estimate_regional_demand_growth_includes_rest_of_world():
         "Rest of World",
     }
     assert growth["demand_growth"].between(-0.015, 0.055).all()
+
+
+def test_gdp_per_capita_growth_uses_exact_per_person_cagr():
+    macro = pd.DataFrame(
+        [
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "gdp_constant_usd",
+                "indicator_code": "NY.GDP.MKTP.KD",
+                "year": 2020,
+                "value": 100.0,
+            },
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "industry_value_added_constant_usd",
+                "indicator_code": "industry_value_added_constant_usd",
+                "year": 2020,
+                "value": 40.0,
+            },
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "population",
+                "indicator_code": "SP.POP.TOTL",
+                "year": 2020,
+                "value": 100.0,
+            },
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "gdp_constant_usd",
+                "indicator_code": "NY.GDP.MKTP.KD",
+                "year": 2021,
+                "value": 121.0,
+            },
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "industry_value_added_constant_usd",
+                "indicator_code": "industry_value_added_constant_usd",
+                "year": 2021,
+                "value": 44.0,
+            },
+            {
+                "country": "China",
+                "country_code": "CHN",
+                "indicator": "population",
+                "indicator_code": "SP.POP.TOTL",
+                "year": 2021,
+                "value": 110.0,
+            },
+        ]
+    )
+    growth = _macro_growth_for_code(_pivot_macro(macro), "CHN", 1)
+
+    assert round(growth["gdp_per_capita"], 6) == 0.1
 
 
 def test_run_model_produces_full_forecast():

@@ -102,12 +102,14 @@ def _macro_growth_for_code(
     start = start_candidates.iloc[-1] if not start_candidates.empty else country.iloc[0]
     periods = max(int(end["year"] - start["year"]), 1)
 
-    gdp_growth = _cagr(float(start[GDP]), float(end[GDP]), periods)
     industry_growth = _cagr(float(start[INDUSTRY]), float(end[INDUSTRY]), periods)
     population_growth = _cagr(float(start[POPULATION]), float(end[POPULATION]), periods)
+    start_gdp_per_capita = float(start[GDP]) / float(start[POPULATION])
+    end_gdp_per_capita = float(end[GDP]) / float(end[POPULATION])
+    gdp_per_capita_growth = _cagr(start_gdp_per_capita, end_gdp_per_capita, periods)
     return {
         "industry": industry_growth,
-        "gdp_per_capita": gdp_growth - population_growth,
+        "gdp_per_capita": gdp_per_capita_growth,
         "population": population_growth,
     }
 

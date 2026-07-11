@@ -791,7 +791,7 @@ function renderScenarioExplanation(state) {
     {
       label: "Demand driver weights",
       source: sourceNote(
-        "World Bank GDP, industry-share, and population indicators are the public drivers. The weights are model judgment, with industry largest because copper use is concentrated in industrial, construction, electrical, and infrastructure activity.",
+        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights are model judgment, with industry largest because copper use is concentrated in industrial, construction, electrical, and infrastructure activity.",
         [
           sourceLink("GDP", sourceUrls.worldBankGdp),
           sourceLink("Industry share", sourceUrls.worldBankIndustry),

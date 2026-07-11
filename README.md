@@ -53,6 +53,8 @@ regional demand growth =
   + scenario shock
 ```
 
+The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
+
 Supply is split into primary and secondary refined copper:
 
 - Primary supply grows with recent USGS mine/refinery growth, pipeline assumptions, and disruption assumptions.
