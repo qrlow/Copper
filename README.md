@@ -28,6 +28,7 @@ Outputs are written to `outputs/`:
 
 - `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
 - `demand_world_gdp_regression_dataset.csv`: long-history annual ICSG usage and World Bank world real GDP growth dataset.
+- `demand_regression_plot_points.csv`: x/y/fitted values used for dashboard regression scatterplots.
 - `demand_driver_regression_summary.csv`: OLS coefficients and diagnostic relative-importance shares.
 - `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics for the multivariate, GDP-per-capita-only, and world-GDP regressions.
 - `base_case_forecast.csv`: annual global refined copper balance.

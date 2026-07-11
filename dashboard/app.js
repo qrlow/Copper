@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-model-comparison-wide";
+const DATA_VERSION = "2026-07-11-regression-plots";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -45,6 +45,7 @@ function regressionFiles() {
   return {
     dataset: versionedAppUrl("outputs/demand_driver_regression_dataset.csv"),
     gdpDataset: versionedAppUrl("outputs/demand_world_gdp_regression_dataset.csv"),
+    plotPoints: versionedAppUrl("outputs/demand_regression_plot_points.csv"),
     summary: versionedAppUrl("outputs/demand_driver_regression_summary.csv"),
     fit: versionedAppUrl("outputs/demand_driver_regression_fit.csv"),
   };
@@ -94,6 +95,7 @@ const sourceUrls = {
   bearConfig: appUrl("config/bear_case.json"),
   regressionDataset: appUrl("outputs/demand_driver_regression_dataset.csv"),
   regressionGdpDataset: appUrl("outputs/demand_world_gdp_regression_dataset.csv"),
+  regressionPlotPoints: appUrl("outputs/demand_regression_plot_points.csv"),
   regressionSummary: appUrl("outputs/demand_driver_regression_summary.csv"),
   regressionFit: appUrl("outputs/demand_driver_regression_fit.csv"),
   workbookMarketBalance: appUrl("outputs/workbook_market_balance.csv"),
@@ -978,6 +980,132 @@ function regressionKeyCoefficient(row) {
   return `${label}: ${formatNumber(row.key_coefficient, 3)}`;
 }
 
+function paddedDomain(values) {
+  const finiteValues = values.map(Number).filter(Number.isFinite);
+  if (!finiteValues.length) return [0, 1];
+  const minValue = Math.min(...finiteValues);
+  const maxValue = Math.max(...finiteValues);
+  const span = maxValue - minValue || Math.max(Math.abs(maxValue) * 0.2, 0.01);
+  return [minValue - span * 0.12, maxValue + span * 0.12];
+}
+
+function regressionPlotLine(points, xDomain) {
+  const firstPoint = points[0];
+  if (firstPoint.line_type === "actual_equals_fitted") {
+    return [
+      { x: xDomain[0], y: xDomain[0] },
+      { x: xDomain[1], y: xDomain[1] },
+    ];
+  }
+
+  const sorted = [...points].sort((a, b) => Number(a.x_value) - Number(b.x_value));
+  return [
+    { x: Number(sorted[0].x_value), y: Number(sorted[0].fitted_value) },
+    {
+      x: Number(sorted.at(-1).x_value),
+      y: Number(sorted.at(-1).fitted_value),
+    },
+  ];
+}
+
+function renderRegressionScatter(modelId, points) {
+  const width = 520;
+  const height = 330;
+  const margin = { top: 22, right: 24, bottom: 62, left: 72 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const xValues = points.map((point) => Number(point.x_value));
+  const yValues = points.map((point) => Number(point.y_value));
+  let xDomain = paddedDomain(xValues);
+  let yDomain = paddedDomain(yValues);
+  const equalityPlot = points[0].line_type === "actual_equals_fitted";
+  if (equalityPlot) {
+    const sharedDomain = paddedDomain([...xValues, ...yValues]);
+    xDomain = sharedDomain;
+    yDomain = sharedDomain;
+  }
+
+  const linePoints = regressionPlotLine(points, xDomain);
+  xDomain = paddedDomain([...xValues, ...linePoints.map((point) => point.x)]);
+  yDomain = equalityPlot
+    ? xDomain
+    : paddedDomain([...yValues, ...linePoints.map((point) => point.y)]);
+  const x = scaleLinear(xDomain[0], xDomain[1], margin.left, margin.left + chartWidth);
+  const y = scaleLinear(yDomain[0], yDomain[1], margin.top + chartHeight, margin.top);
+  const xTicks = [xDomain[0], (xDomain[0] + xDomain[1]) / 2, xDomain[1]];
+  const yTicks = [yDomain[0], (yDomain[0] + yDomain[1]) / 2, yDomain[1]];
+  const linePathValue = linePath(linePoints, (point) => x(point.x), (point) => y(point.y));
+  const lineLabel = equalityPlot ? "Actual = fitted" : "Regression line";
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${points[0].model_name} scatterplot">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text class="scatter-axis-label" x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatSignedPct(tick, 1)}</text>
+          `,
+        )
+        .join("")}
+      ${xTicks
+        .map(
+          (tick) => `
+            <line class="grid-line vertical" x1="${x(tick)}" x2="${x(tick)}" y1="${margin.top}" y2="${margin.top + chartHeight}" />
+            <text class="scatter-axis-label" x="${x(tick)}" y="${height - 34}" text-anchor="middle">${formatSignedPct(tick, 1)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      <line class="axis-line" x1="${margin.left}" x2="${margin.left}" y1="${margin.top}" y2="${margin.top + chartHeight}" />
+      <path class="${equalityPlot ? "scatter-equality-line" : "scatter-regression-line"}" d="${linePathValue}" />
+      ${points
+        .map(
+          (point) => `
+            <circle class="scatter-point" cx="${x(Number(point.x_value))}" cy="${y(Number(point.y_value))}" r="4.2">
+              <title>${Math.round(point.year)}: x ${formatSignedPct(point.x_value, 2)}, y ${formatSignedPct(point.y_value, 2)}</title>
+            </circle>
+          `,
+        )
+        .join("")}
+      <text class="scatter-axis-title" x="${margin.left + chartWidth / 2}" y="${height - 8}" text-anchor="middle">${points[0].x_label}</text>
+      <text class="scatter-axis-title" transform="translate(18 ${margin.top + chartHeight / 2}) rotate(-90)" text-anchor="middle">${points[0].y_label}</text>
+    </svg>
+    ${renderLegend([
+      { label: "Observation", color: colors.copper },
+      { label: lineLabel, color: equalityPlot ? colors.green : colors.teal },
+    ])}
+  `;
+}
+
+function renderRegressionPlots(fitRows, plotPoints) {
+  const container = document.getElementById("regressionPlotGrid");
+  const grouped = plotPoints.reduce((groups, point) => {
+    groups[point.model_id] = groups[point.model_id] || [];
+    groups[point.model_id].push(point);
+    return groups;
+  }, {});
+
+  container.innerHTML = fitRows
+    .filter((fit) => grouped[fit.model_id])
+    .map((fit) => {
+      const points = grouped[fit.model_id].sort((a, b) => Number(a.year) - Number(b.year));
+      return `
+        <article class="regression-plot-card">
+          <div class="plot-card-header">
+            <div>
+              <h3>${fit.model_name}</h3>
+              <span>${points.length} observations</span>
+            </div>
+            <strong>R² ${formatNumber(fit.r_squared, 3)}</strong>
+          </div>
+          <div class="scatter-chart">${renderRegressionScatter(fit.model_id, points)}</div>
+          <p>${points[0].plot_note}</p>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderRegressionTab(regression) {
   const fitRows = regression.fit;
   const multivariateFit =
@@ -1036,6 +1164,8 @@ function renderRegressionTab(regression) {
       </tr>
     `)
     .join("");
+
+  renderRegressionPlots(fitRows, regression.plotPoints);
 
   document.getElementById("regressionDatasetRows").innerHTML = dataset
     .slice(-6)
@@ -1397,6 +1527,7 @@ async function init() {
     scenarioEntries,
     regressionDataset,
     regressionGdpDataset,
+    regressionPlotPoints,
     regressionSummary,
     regressionFit,
     workbookMarketBalance,
@@ -1419,6 +1550,7 @@ async function init() {
       ),
       loadDataset(files.dataset),
       loadDataset(files.gdpDataset),
+      loadDataset(files.plotPoints),
       loadDataset(files.summary),
       loadDataset(files.fit),
       loadDataset(workbookDataFiles.marketBalance),
@@ -1429,6 +1561,7 @@ async function init() {
     regression: {
       dataset: regressionDataset,
       gdpDataset: regressionGdpDataset,
+      plotPoints: regressionPlotPoints,
       summary: regressionSummary,
       fit: regressionFit,
     },

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-model-comparison-wide" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-regression-plots" />
   </head>
   <body>
     <main class="app-shell">
@@ -473,6 +473,15 @@
             <p class="panel-note">The no-intercept world-GDP row is the closest version of the Goldman-style rule-of-thumb. The 5-year CAGR row is the smoother cycle-level version.</p>
           </article>
 
+          <article class="panel wide regression-plots-panel">
+            <div class="panel-header">
+              <h2>Model Scatterplots</h2>
+              <span class="badge">Fitted line</span>
+            </div>
+            <div id="regressionPlotGrid" class="regression-plot-grid" aria-label="Regression scatterplots with fitted lines"></div>
+            <p class="panel-note">Each scatterplot uses the same data and coefficients as the model comparison table. The multivariate model is shown as actual versus fitted because it has multiple x-axis drivers.</p>
+          </article>
+
           <article class="panel">
             <div class="panel-header">
               <h2>Regression Result</h2>
@@ -622,6 +631,7 @@
               <p>Generated files and code used by the dashboard tab.</p>
               <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset CSV</a>
               <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset CSV</a>
+              <a href="../outputs/demand_regression_plot_points.csv" target="_blank" rel="noreferrer">Regression plot points CSV</a>
               <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression summary CSV</a>
               <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit CSV</a>
               <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
@@ -631,6 +641,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-model-comparison-wide"></script>
+    <script src="./app.js?v=2026-07-11-regression-plots"></script>
   </body>
 </html>

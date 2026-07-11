@@ -193,3 +193,19 @@ def test_regression_weights_are_normalized():
     assert round(world_gdp_rule["r_squared"], 3) == 0.279
     assert round(world_gdp_5y["key_coefficient"], 3) == 0.941
     assert round(world_gdp_5y["r_squared"], 3) == 0.395
+
+
+def test_regression_plot_points_cover_all_models():
+    outputs = estimate_driver_weights(Path("data"))
+    plot_points = outputs.plot_points
+
+    assert set(plot_points["model_id"]) == set(outputs.fit["model_id"])
+    assert len(plot_points[plot_points["model_id"] == "world_gdp_annual_no_intercept"]) == 64
+    assert len(plot_points[plot_points["model_id"] == "world_gdp_5y_cagr"]) == 60
+    assert {
+        "model_id",
+        "x_value",
+        "y_value",
+        "fitted_value",
+        "line_type",
+    }.issubset(plot_points.columns)

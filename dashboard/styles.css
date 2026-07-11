@@ -1046,6 +1046,87 @@ input[type="range"] {
   min-width: 340px;
 }
 
+.regression-plot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.regression-plot-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf9f6;
+}
+
+.plot-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plot-card-header h3 {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.plot-card-header span,
+.regression-plot-card p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.plot-card-header strong {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.scatter-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.scatter-point {
+  fill: var(--copper);
+  fill-opacity: 0.78;
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.scatter-regression-line {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 3;
+}
+
+.scatter-equality-line {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3;
+  stroke-dasharray: 7 5;
+}
+
+.scatter-axis-label,
+.scatter-axis-title {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.scatter-axis-title {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
 .formula-block {
   margin-bottom: 14px;
   padding: 14px;
@@ -1133,6 +1214,7 @@ input[type="range"] {
   .factor-grid,
   .regression-metrics,
   .regression-grid,
+  .regression-plot-grid,
   .workbook-metrics,
   .workbook-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1164,6 +1246,7 @@ input[type="range"] {
   .factor-grid,
   .regression-metrics,
   .regression-grid,
+  .regression-plot-grid,
   .workbook-metrics,
   .workbook-grid {
     grid-template-columns: 1fr;

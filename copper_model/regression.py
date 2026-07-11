@@ -32,6 +32,7 @@ MODEL_WEIGHT_FIELDS = {
 class RegressionOutputs:
     dataset: pd.DataFrame
     gdp_dataset: pd.DataFrame
+    plot_points: pd.DataFrame
     summary: pd.DataFrame
     fit: pd.DataFrame
 
@@ -430,10 +431,23 @@ def estimate_driver_weights(
             },
         ]
     )
+    plot_points = _build_regression_plot_points(
+        dataset=dataset,
+        world_gdp_dataset=world_gdp_dataset,
+        world_gdp_5y_dataset=world_gdp_5y_dataset,
+        world_gdp_change_dataset=world_gdp_change_dataset,
+        coefficients=coefficients,
+        gdp_only_coefficients=gdp_only_coefficients,
+        world_gdp_coefficients=world_gdp_coefficients,
+        world_gdp_no_intercept_coefficients=world_gdp_no_intercept_coefficients,
+        world_gdp_5y_coefficients=world_gdp_5y_coefficients,
+        world_gdp_change_coefficients=world_gdp_change_coefficients,
+    )
 
     return RegressionOutputs(
         dataset=dataset,
         gdp_dataset=world_gdp_dataset,
+        plot_points=plot_points,
         summary=pd.DataFrame(rows),
         fit=fit,
     )
@@ -444,14 +458,146 @@ def write_regression_outputs(outputs: RegressionOutputs, output_dir: Path) -> li
     paths = [
         output_dir / "demand_driver_regression_dataset.csv",
         output_dir / "demand_world_gdp_regression_dataset.csv",
+        output_dir / "demand_regression_plot_points.csv",
         output_dir / "demand_driver_regression_summary.csv",
         output_dir / "demand_driver_regression_fit.csv",
     ]
     outputs.dataset.to_csv(paths[0], index=False)
     outputs.gdp_dataset.to_csv(paths[1], index=False)
-    outputs.summary.to_csv(paths[2], index=False)
-    outputs.fit.to_csv(paths[3], index=False)
+    outputs.plot_points.to_csv(paths[2], index=False)
+    outputs.summary.to_csv(paths[3], index=False)
+    outputs.fit.to_csv(paths[4], index=False)
     return paths
+
+
+def _build_regression_plot_points(
+    dataset: pd.DataFrame,
+    world_gdp_dataset: pd.DataFrame,
+    world_gdp_5y_dataset: pd.DataFrame,
+    world_gdp_change_dataset: pd.DataFrame,
+    coefficients: dict[str, float],
+    gdp_only_coefficients: dict[str, float],
+    world_gdp_coefficients: dict[str, float],
+    world_gdp_no_intercept_coefficients: dict[str, float],
+    world_gdp_5y_coefficients: dict[str, float],
+    world_gdp_change_coefficients: dict[str, float],
+) -> pd.DataFrame:
+    """Build standardized scatterplot rows for dashboard regression diagnostics."""
+
+    rows: list[dict[str, float | int | str]] = []
+
+    def add_univariate(
+        model_id: str,
+        model_name: str,
+        data: pd.DataFrame,
+        x_column: str,
+        y_column: str,
+        coefficients_for_model: dict[str, float],
+        x_label: str,
+        y_label: str,
+        plot_note: str,
+    ) -> None:
+        for point in data.itertuples(index=False):
+            x_value = float(getattr(point, x_column))
+            y_value = float(getattr(point, y_column))
+            rows.append(
+                {
+                    "model_id": model_id,
+                    "model_name": model_name,
+                    "plot_type": "driver_vs_usage",
+                    "year": int(point.year),
+                    "x_label": x_label,
+                    "y_label": y_label,
+                    "x_value": x_value,
+                    "y_value": y_value,
+                    "fitted_value": coefficients_for_model["intercept"]
+                    + coefficients_for_model[x_column] * x_value,
+                    "line_type": "regression",
+                    "plot_note": plot_note,
+                }
+            )
+
+    add_univariate(
+        model_id="gdp_per_capita_only",
+        model_name="GDP per capita only",
+        data=dataset,
+        x_column="gdp_per_capita_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=gdp_only_coefficients,
+        x_label="GDP per capita growth",
+        y_label="Refined usage growth",
+        plot_note="Annual 1992-2024 sample.",
+    )
+    add_univariate(
+        model_id="world_gdp_annual",
+        model_name="World real GDP only",
+        data=world_gdp_dataset,
+        x_column="world_real_gdp_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=world_gdp_coefficients,
+        x_label="World real GDP growth",
+        y_label="Refined usage growth",
+        plot_note="Annual 1961-2024 sample with intercept.",
+    )
+    add_univariate(
+        model_id="world_gdp_annual_no_intercept",
+        model_name="World GDP rule-of-thumb",
+        data=world_gdp_dataset,
+        x_column="world_real_gdp_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=world_gdp_no_intercept_coefficients,
+        x_label="World real GDP growth",
+        y_label="Refined usage growth",
+        plot_note="Annual 1961-2024 sample; line forced through zero.",
+    )
+    add_univariate(
+        model_id="world_gdp_5y_cagr",
+        model_name="World GDP, 5-year CAGR",
+        data=world_gdp_5y_dataset,
+        x_column="world_real_gdp_growth",
+        y_column="refined_usage_growth",
+        coefficients_for_model=world_gdp_5y_coefficients,
+        x_label="World real GDP 5-year CAGR",
+        y_label="Refined usage 5-year CAGR",
+        plot_note="5-year overlapping CAGRs from 1965-2024.",
+    )
+    add_univariate(
+        model_id="world_gdp_growth_change",
+        model_name="GDP slowdown test",
+        data=world_gdp_change_dataset,
+        x_column="world_real_gdp_growth_change",
+        y_column="refined_usage_growth_change",
+        coefficients_for_model=world_gdp_change_coefficients,
+        x_label="Change in world real GDP growth",
+        y_label="Change in refined usage growth",
+        plot_note="Year-on-year changes in annual growth rates.",
+    )
+
+    for point in dataset.itertuples(index=False):
+        fitted_value = coefficients["intercept"] + sum(
+            coefficients[predictor] * float(getattr(point, predictor))
+            for predictor in PREDICTORS
+        )
+        rows.append(
+            {
+                "model_id": "multivariate_macro",
+                "model_name": "Multivariate macro diagnostic",
+                "plot_type": "actual_vs_fitted",
+                "year": int(point.year),
+                "x_label": "Fitted refined usage growth",
+                "y_label": "Actual refined usage growth",
+                "x_value": fitted_value,
+                "y_value": float(point.refined_usage_growth),
+                "fitted_value": fitted_value,
+                "line_type": "actual_equals_fitted",
+                "plot_note": (
+                    "Multivariate model shown as actual versus fitted because "
+                    "there is no single x-axis driver."
+                ),
+            }
+        )
+
+    return pd.DataFrame(rows)
 
 
 def _ols(
