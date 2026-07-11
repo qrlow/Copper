@@ -9,7 +9,11 @@ from copper_model.model import (
     load_config,
     run_model,
 )
-from copper_model.regression import estimate_driver_weights, prepare_regression_dataset
+from copper_model.regression import (
+    estimate_driver_weights,
+    prepare_regression_dataset,
+    prepare_world_gdp_regression_dataset,
+)
 
 
 def _macro_rows() -> pd.DataFrame:
@@ -154,6 +158,18 @@ def test_regression_dataset_uses_public_history():
     }.issubset(dataset.columns)
 
 
+def test_world_gdp_regression_dataset_uses_long_public_history():
+    dataset = prepare_world_gdp_regression_dataset(Path("data"))
+
+    assert dataset["year"].min() == 1961
+    assert dataset["year"].max() == 2024
+    assert len(dataset) == 64
+    assert {
+        "refined_usage_growth",
+        "world_real_gdp_growth",
+    }.issubset(dataset.columns)
+
+
 def test_regression_weights_are_normalized():
     outputs = estimate_driver_weights(Path("data"))
     weights = outputs.weights
@@ -166,3 +182,14 @@ def test_regression_weights_are_normalized():
 
     assert round(gdp_only["r_squared"], 3) == 0.098
     assert round(gdp_only["gdp_per_capita_coefficient"], 3) == 0.466
+    world_gdp_rule = outputs.fit[
+        outputs.fit["model_id"] == "world_gdp_annual_no_intercept"
+    ].iloc[0]
+    world_gdp_5y = outputs.fit[outputs.fit["model_id"] == "world_gdp_5y_cagr"].iloc[
+        0
+    ]
+
+    assert round(world_gdp_rule["key_coefficient"], 3) == 0.931
+    assert round(world_gdp_rule["r_squared"], 3) == 0.279
+    assert round(world_gdp_5y["key_coefficient"], 3) == 0.941
+    assert round(world_gdp_5y["r_squared"], 3) == 0.395

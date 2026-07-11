@@ -27,8 +27,9 @@ Open `http://127.0.0.1:8000/dashboard/` to view the dashboard.
 Outputs are written to `outputs/`:
 
 - `demand_driver_regression_dataset.csv`: joined annual ICSG/World Bank regression dataset.
+- `demand_world_gdp_regression_dataset.csv`: long-history annual ICSG usage and World Bank world real GDP growth dataset.
 - `demand_driver_regression_summary.csv`: OLS coefficients and diagnostic relative-importance shares.
-- `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics for the multivariate and GDP-per-capita-only regressions.
+- `demand_driver_regression_fit.csv`: sample, method, and fit diagnostics for the multivariate, GDP-per-capita-only, and world-GDP regressions.
 - `base_case_forecast.csv`: annual global refined copper balance.
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
@@ -59,7 +60,12 @@ regional demand growth =
 
 The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
 
-Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests annual global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard shows both a GDP-per-capita-only regression and a multivariate macro regression. These diagnostics have weak fit and overlapping predictors, so they are not used as forecast weights. In growth terms, GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share, so the multivariate drivers are mechanically entangled.
+Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard now shows two kinds of tests:
+
+- World real GDP diagnostics, which are the closest match to the market rule-of-thumb that a 1 percentage point change in world real GDP growth is associated with roughly a 0.9 percentage point change in global copper demand growth. In the 1961-2024 annual public-data sample, the no-intercept slope is about 0.93. With an intercept, annual R-squared is about 0.321. Using 5-year CAGRs raises R-squared to about 0.395.
+- Driver diagnostics using GDP per capita, population, and industry activity. These are weaker and mechanically overlapping: GDP per capita plus population approximately reconstructs GDP growth, and industry activity is real GDP multiplied by industry share.
+
+These diagnostics are not used as forecast weights. They show that GDP matters, but annual copper usage still depends heavily on copper-specific cycles, China property and grid demand, substitution, scrap response, prices, inventories, policy, and sector mix.
 
 Supply is split into primary and secondary refined copper:
 

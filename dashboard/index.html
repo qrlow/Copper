@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdppc-regression" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-11-world-gdp-workbook-tab" />
   </head>
   <body>
     <main class="app-shell">
@@ -28,6 +28,7 @@
 
       <nav class="app-tabs" aria-label="Dashboard views" role="tablist">
         <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Workbook Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">Regression Diagnostic</button>
       </nav>
 
@@ -263,7 +264,7 @@
 
           <article class="source-card">
             <h3>ICSG Market Context</h3>
-            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, scrap/recycling context, and historical world refined usage for the demand-driver regression.</p>
+            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, scrap/recycling context, and historical world refined usage for the demand-driver and world-GDP regressions.</p>
             <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
             <a href="../data/seed/icsg_world_copper_balance_1960_2024.csv" target="_blank" rel="noreferrer">Local historical balance seed</a>
           </article>
@@ -284,10 +285,11 @@
 
           <article class="source-card">
             <h3>Regression Diagnostic</h3>
-            <p>Annual OLS regression of ICSG world refined usage growth on World Bank industry-activity, GDP-per-capita, and population growth. It is not used for forecast weights because R-squared is only 0.178 and the predictors overlap: GDP per capita plus population reconstructs GDP growth, while industry activity already contains GDP.</p>
+            <p>Diagnostic tests of ICSG world refined usage growth against World Bank macro data. The Goldman-style rule-of-thumb test uses total world real GDP growth, not GDP per capita. It is still not used for forecast weights because fit is moderate and copper-specific shocks matter.</p>
             <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
             <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
+            <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset</a>
           </article>
 
           <article class="source-card">
@@ -307,7 +309,8 @@
             <a href="../config/bear_case.json" target="_blank" rel="noreferrer">Bear-case assumptions JSON</a>
             <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression weight summary</a>
             <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit diagnostics</a>
-            <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset</a>
+            <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Macro regression dataset</a>
+            <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset</a>
             <a href="../copper_model/model.py" target="_blank" rel="noreferrer">Forecast model code</a>
             <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
             <a href="../copper_model/sources.py" target="_blank" rel="noreferrer">Data fetcher code</a>
@@ -321,10 +324,104 @@
             <a href="../outputs/base_case_mine_supply_by_country.csv" target="_blank" rel="noreferrer">Mine supply CSV</a>
             <a href="../outputs/bull_case_forecast.csv" target="_blank" rel="noreferrer">Bull forecast CSV</a>
             <a href="../outputs/bear_case_forecast.csv" target="_blank" rel="noreferrer">Bear forecast CSV</a>
+            <a href="../outputs/workbook_market_balance.csv" target="_blank" rel="noreferrer">Workbook market balance CSV</a>
           </article>
         </div>
       </section>
       </div>
+
+      <section id="workbookTab" class="tab-panel is-hidden" aria-labelledby="workbookHeading">
+        <section class="panel workbook-hero">
+          <div class="panel-header">
+            <h2 id="workbookHeading">Workbook Market Balance</h2>
+            <span id="workbookDataBadge" class="badge">--</span>
+          </div>
+          <p class="workbook-lede">Yearly copper supply, demand, price, scrap, and electrification rows extracted from the workbook's <code>Market Balance</code> sheet.</p>
+          <div class="workbook-metrics" aria-label="Workbook summary metrics">
+            <article class="metric compact">
+              <span>2030 Balance</span>
+              <strong id="workbookFinalBalance">--</strong>
+              <small>refined copper market</small>
+            </article>
+            <article class="metric compact">
+              <span>2030 Copper Price</span>
+              <strong id="workbookFinalPrice">--</strong>
+              <small>US dollars per tonne</small>
+            </article>
+            <article class="metric compact">
+              <span>2030 Electrification Share</span>
+              <strong id="workbookFinalElectrification">--</strong>
+              <small>of total copper demand</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="workbook-grid" aria-label="Workbook market-balance visuals">
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Refined Market Balance</h2>
+              <span class="badge">'000 tonnes</span>
+            </div>
+            <div id="workbookBalanceChart" class="chart large" role="img" aria-label="Workbook refined production, refined consumption, and market balance"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Demand Mix</h2>
+              <span id="workbookDemandMixBadge" class="badge">--</span>
+            </div>
+            <div id="workbookDemandMixStack" class="stacked-breakdown" role="img" aria-label="Workbook demand components"></div>
+            <div id="workbookDemandMixRows" class="breakdown-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Copper Price Path</h2>
+              <span class="badge">$/t</span>
+            </div>
+            <div id="workbookPriceChart" class="chart compact-chart" role="img" aria-label="Workbook copper price path"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>China Split</h2>
+              <span id="workbookChinaSplitBadge" class="badge">--</span>
+            </div>
+            <div id="workbookChinaSplit" class="split-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Scrap System</h2>
+              <span id="workbookScrapBadge" class="badge">--</span>
+            </div>
+            <div id="workbookScrapStack" class="stacked-breakdown" role="img" aria-label="Workbook scrap system components"></div>
+            <div id="workbookScrapRows" class="breakdown-list"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Workbook Rows</h2>
+              <span class="badge">latest six years</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table workbook-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Refined production</th>
+                    <th>Refined consumption</th>
+                    <th>Market balance</th>
+                    <th>Copper price</th>
+                    <th>Electrification share</th>
+                  </tr>
+                </thead>
+                <tbody id="workbookRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </section>
 
       <section id="regressionTab" class="tab-panel is-hidden" aria-labelledby="regressionHeading">
         <section class="panel regression-hero">
@@ -332,12 +429,12 @@
             <h2 id="regressionHeading">Regression Diagnostic</h2>
             <span class="badge">Diagnostic only</span>
           </div>
-          <p class="regression-lede">This regression tests whether public macro drivers can statistically explain annual world refined copper usage growth. The result is useful as a caution: it is not strong enough to calibrate the forecast weights.</p>
+          <p class="regression-lede">This tab tests the GDP-copper relationship directly. GDP per capita alone is weak, but total world real GDP growth gives a clearer result: the no-intercept rule-of-thumb slope is close to 0.9, while the fit is still not strong enough to drive the forecast mechanically.</p>
           <div class="regression-metrics" aria-label="Regression summary metrics">
             <article class="metric compact">
-              <span>GDP-only Fit</span>
+              <span>GDP Rule Slope</span>
               <strong id="regressionR2">--</strong>
-              <small>R-squared</small>
+              <small>copper pp per 1 pp GDP</small>
             </article>
             <article class="metric compact">
               <span>Sample</span>
@@ -388,20 +485,26 @@
                     <th>Equation</th>
                     <th>R-squared</th>
                     <th>Intercept</th>
-                    <th>GDP/capita coefficient</th>
+                    <th>Key coefficient</th>
                     <th>Read-through</th>
                   </tr>
                 </thead>
                 <tbody id="regressionModelRows"></tbody>
               </table>
             </div>
-            <p class="panel-note">The GDP-per-capita-only version is the cleanest version of the test, but it explains less annual usage variation than the full macro diagnostic.</p>
+            <p class="panel-note">The no-intercept world-GDP row is the closest version of the Goldman-style rule-of-thumb. The 5-year CAGR row is the smoother cycle-level version.</p>
           </article>
 
           <article class="panel">
             <div class="panel-header">
               <h2>Equations Tested</h2>
-              <span class="badge">OLS with intercept</span>
+              <span class="badge">OLS diagnostics</span>
+            </div>
+            <div class="formula-block">
+              <code>refined usage growth = world real GDP growth + error</code>
+            </div>
+            <div class="formula-block">
+              <code>refined usage growth = intercept + world real GDP growth + error</code>
             </div>
             <div class="formula-block">
               <code>refined usage growth = intercept + GDP per capita growth + error</code>
@@ -416,11 +519,11 @@
               </div>
               <div>
                 <dt>Independent variables</dt>
-                <dd>World Bank world industry activity growth, GDP-per-capita growth, and population growth.</dd>
+                <dd>World Bank world real GDP growth for the rule-of-thumb tests, plus GDP-per-capita, industry-activity, and population growth for the diagnostic driver comparison.</dd>
               </div>
               <div>
                 <dt>Regression method</dt>
-                <dd id="regressionMethod">OLS with intercept. Both models use the same annual 1992-2024 sample.</dd>
+                <dd id="regressionMethod">OLS diagnostics using the available overlapping public history.</dd>
               </div>
             </dl>
           </article>
@@ -435,7 +538,7 @@
               <li>Fetch World Bank world real GDP, industry value-added share of GDP, and population.</li>
               <li>Calculate industry activity as real GDP multiplied by industry share of GDP.</li>
               <li>Calculate GDP per capita as real GDP divided by population.</li>
-              <li>Convert usage and macro variables into annual growth rates where all variables overlap. The regression sample starts in 1992 because World Bank world industry-share data begins in 1991.</li>
+              <li>Convert usage and macro variables into growth rates where each test has overlapping data. The world-GDP sample runs from 1961-2024. The multivariate industry/GDP-per-capita sample starts in 1992 because World Bank world industry-share data begins in 1991.</li>
             </ol>
           </article>
 
@@ -445,7 +548,9 @@
               <span class="badge">Why not use it</span>
             </div>
             <ul class="consideration-list">
-              <li>Low explanatory power: the GDP-per-capita-only R-squared is <strong id="regressionR2Text">--</strong>, so most annual copper usage growth remains unexplained.</li>
+              <li>Better GDP test: using total world real GDP growth gives annual R-squared of <strong id="regressionR2Text">--</strong>, materially better than GDP per capita alone.</li>
+              <li>Rule-of-thumb result: when the intercept is forced to zero, a 1 percentage point move in world real GDP growth maps to about 0.93 percentage points of world refined copper usage growth.</li>
+              <li>Cycle smoothing helps: using 5-year CAGRs raises the fit, which suggests the GDP link is clearer over economic cycles than in single-year changes.</li>
               <li>Predictor overlap: <code>GDP = GDP per capita * population</code>, so population is mechanically related to GDP per capita.</li>
               <li>Industry activity overlap: <code>industry activity = GDP * industry share</code>, so the industry driver already contains the GDP component.</li>
               <li>Global time-series sample: the regression has a small annual sample and no country-level panel variation.</li>
@@ -455,8 +560,28 @@
 
           <article class="panel wide">
             <div class="panel-header">
-              <h2>Dataset Preview</h2>
+              <h2>World GDP Dataset Preview</h2>
               <span id="regressionDatasetBadge" class="badge">--</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table regression-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Refined usage growth</th>
+                    <th>World real GDP growth</th>
+                    <th>Refined usage</th>
+                  </tr>
+                </thead>
+                <tbody id="regressionGdpDatasetRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Driver Dataset Preview</h2>
+              <span class="badge">shorter sample</span>
             </div>
             <div class="compact-table-wrap">
               <table class="compact-table regression-table">
@@ -496,6 +621,7 @@
               <h3>Regression Artifacts</h3>
               <p>Generated files and code used by the dashboard tab.</p>
               <a href="../outputs/demand_driver_regression_dataset.csv" target="_blank" rel="noreferrer">Regression dataset CSV</a>
+              <a href="../outputs/demand_world_gdp_regression_dataset.csv" target="_blank" rel="noreferrer">World GDP regression dataset CSV</a>
               <a href="../outputs/demand_driver_regression_summary.csv" target="_blank" rel="noreferrer">Regression summary CSV</a>
               <a href="../outputs/demand_driver_regression_fit.csv" target="_blank" rel="noreferrer">Regression fit CSV</a>
               <a href="../copper_model/regression.py" target="_blank" rel="noreferrer">Regression code</a>
@@ -505,6 +631,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-gdppc-regression"></script>
+    <script src="./app.js?v=2026-07-11-world-gdp-workbook-tab"></script>
   </body>
 </html>

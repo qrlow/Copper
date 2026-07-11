@@ -72,6 +72,13 @@ def estimate_weights_command(args: argparse.Namespace) -> int:
     )
     for fit in outputs.fit.itertuples(index=False):
         print(f"  {fit.model_id}: r_squared={fit.r_squared:.3f}")
+    rule_fit = outputs.fit[
+        outputs.fit["model_id"] == "world_gdp_annual_no_intercept"
+    ].iloc[0]
+    print(
+        "  world GDP rule slope="
+        f"{rule_fit['key_coefficient']:.3f} copper-demand pp per 1 GDP pp"
+    )
     for row in outputs.summary.itertuples(index=False):
         print(f"  {row.model_field}: diagnostic share={row.diagnostic_lmg_share:.3f}")
     return 0

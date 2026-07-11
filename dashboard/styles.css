@@ -908,7 +908,8 @@ input[type="range"] {
   margin-bottom: 16px;
 }
 
-.regression-lede {
+.regression-lede,
+.workbook-lede {
   max-width: 980px;
   margin: 0 0 16px;
   color: var(--muted);
@@ -916,10 +917,105 @@ input[type="range"] {
   line-height: 1.5;
 }
 
+.workbook-lede code {
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
 .regression-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+}
+
+.workbook-hero {
+  margin-bottom: 16px;
+}
+
+.workbook-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.workbook-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  gap: 16px;
+}
+
+.workbook-grid .panel.wide {
+  grid-column: 1 / -1;
+}
+
+.compact-chart {
+  min-height: 240px;
+}
+
+.series-price {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 3;
+}
+
+.price-point {
+  fill: var(--surface);
+  stroke: var(--blue);
+  stroke-width: 2;
+}
+
+.split-list {
+  display: grid;
+  gap: 16px;
+}
+
+.split-row {
+  display: grid;
+  gap: 8px;
+}
+
+.split-row-header,
+.split-row-values {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.split-row-header strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.split-row-header span,
+.split-row-values {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.split-track {
+  display: flex;
+  height: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.split-track span + span {
+  border-left: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.split-row-values span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workbook-table {
+  min-width: 940px;
 }
 
 .regression-grid {
@@ -1022,7 +1118,9 @@ input[type="range"] {
   .breakdown-grid,
   .factor-grid,
   .regression-metrics,
-  .regression-grid {
+  .regression-grid,
+  .workbook-metrics,
+  .workbook-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1051,7 +1149,9 @@ input[type="range"] {
   .breakdown-grid,
   .factor-grid,
   .regression-metrics,
-  .regression-grid {
+  .regression-grid,
+  .workbook-metrics,
+  .workbook-grid {
     grid-template-columns: 1fr;
   }
 

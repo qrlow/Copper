@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-gdppc-regression";
+const DATA_VERSION = "2026-07-11-world-gdp-workbook-tab";
 const APP_ROOT = new URL("../", window.location.href);
 
 function appUrl(path) {
@@ -44,8 +44,15 @@ function scenarioFiles(id) {
 function regressionFiles() {
   return {
     dataset: versionedAppUrl("outputs/demand_driver_regression_dataset.csv"),
+    gdpDataset: versionedAppUrl("outputs/demand_world_gdp_regression_dataset.csv"),
     summary: versionedAppUrl("outputs/demand_driver_regression_summary.csv"),
     fit: versionedAppUrl("outputs/demand_driver_regression_fit.csv"),
+  };
+}
+
+function workbookFiles() {
+  return {
+    marketBalance: versionedAppUrl("outputs/workbook_market_balance.csv"),
   };
 }
 
@@ -86,8 +93,10 @@ const sourceUrls = {
   bullConfig: appUrl("config/bull_case.json"),
   bearConfig: appUrl("config/bear_case.json"),
   regressionDataset: appUrl("outputs/demand_driver_regression_dataset.csv"),
+  regressionGdpDataset: appUrl("outputs/demand_world_gdp_regression_dataset.csv"),
   regressionSummary: appUrl("outputs/demand_driver_regression_summary.csv"),
   regressionFit: appUrl("outputs/demand_driver_regression_fit.csv"),
+  workbookMarketBalance: appUrl("outputs/workbook_market_balance.csv"),
   icsgHistoricalBalance: appUrl("data/seed/icsg_world_copper_balance_1960_2024.csv"),
 };
 
@@ -170,7 +179,13 @@ function formatSignedPct(value, digits = 1) {
 }
 
 function formatNumber(value, digits = 3) {
-  return Number(value).toFixed(digits);
+  if (value === "" || value === null || value === undefined) return "--";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(digits) : "--";
+}
+
+function formatUsd(value) {
+  return `$${Math.round(value).toLocaleString()}`;
 }
 
 function formatBalance(value) {
@@ -936,42 +951,66 @@ function regressionModelReadthrough(modelId) {
       "Cleaner single-driver test, but weak fit. It supports keeping GDP per capita as a useful context variable, not as a standalone demand model.",
     multivariate_macro:
       "Adds more macro information but still has weak fit and overlapping predictors, so it remains diagnostic only.",
+    world_gdp_annual:
+      "Uses total world real GDP, which is closer to the market rule-of-thumb. Fit improves versus GDP per capita, but annual copper-specific shocks still dominate.",
+    world_gdp_annual_no_intercept:
+      "Closest test of the rule-of-thumb: the fitted slope says a 1 pp move in world GDP growth maps to about 0.93 pp in copper usage growth.",
+    world_gdp_5y_cagr:
+      "Smoothing both series over 5-year CAGRs raises the fit, which suggests the GDP relationship is clearer over cycles than year by year.",
+    world_gdp_growth_change:
+      "Tests slowdowns directly by regressing changes in copper usage growth on changes in world GDP growth.",
   }[modelId] ?? "Diagnostic only.";
 }
 
 function compactEquation(equation) {
   return String(equation)
+    .replaceAll("refined_usage_growth_change", "usage growth change")
+    .replaceAll("world_real_gdp_growth_change", "world GDP growth change")
     .replaceAll("refined_usage_growth", "usage growth")
+    .replaceAll("world_real_gdp_growth", "world GDP growth")
     .replaceAll("gdp_per_capita_growth", "GDP/capita growth")
     .replaceAll("industry_activity_growth", "industry growth")
     .replaceAll("population_growth", "population growth");
+}
+
+function regressionKeyCoefficient(row) {
+  const label = row.key_coefficient_label || "Coefficient";
+  return `${label}: ${formatNumber(row.key_coefficient, 3)}`;
 }
 
 function renderRegressionTab(regression) {
   const fitRows = regression.fit;
   const multivariateFit =
     fitRows.find((row) => row.model_id === "multivariate_macro") ?? fitRows[0];
-  const gdpOnlyFit =
-    fitRows.find((row) => row.model_id === "gdp_per_capita_only") ?? multivariateFit;
+  const worldGdpFit =
+    fitRows.find((row) => row.model_id === "world_gdp_annual") ?? multivariateFit;
+  const gdpRuleFit =
+    fitRows.find((row) => row.model_id === "world_gdp_annual_no_intercept") ??
+    worldGdpFit;
+  const gdp5yFit =
+    fitRows.find((row) => row.model_id === "world_gdp_5y_cagr") ?? worldGdpFit;
   const summary = regression.summary;
   const dataset = regression.dataset;
-  const sampleText = `${Math.round(gdpOnlyFit.sample_start_year)}-${Math.round(
-    gdpOnlyFit.sample_end_year,
+  const gdpDataset = regression.gdpDataset ?? dataset;
+  const sampleText = `${Math.round(gdpRuleFit.sample_start_year)}-${Math.round(
+    gdpRuleFit.sample_end_year,
   )}`;
 
   document.getElementById("regressionR2").textContent = formatNumber(
-    gdpOnlyFit.r_squared,
-    3,
+    gdpRuleFit.key_coefficient,
+    2,
   );
   document.getElementById("regressionR2Text").textContent = formatNumber(
-    gdpOnlyFit.r_squared,
+    worldGdpFit.r_squared,
     3,
   );
   document.getElementById("regressionSample").textContent = sampleText;
   document.getElementById("regressionObservationCount").textContent =
-    `${Math.round(gdpOnlyFit.observations)} observations`;
+    `${Math.round(gdpRuleFit.observations)} observations`;
   document.getElementById("regressionDatasetBadge").textContent =
-    `${dataset.length} observations`;
+    `${gdpDataset.length} annual observations`;
+  document.getElementById("regressionMethod").textContent =
+    `Annual world-GDP rule test uses ${Math.round(gdpRuleFit.observations)} observations from ${sampleText}; 5-year CAGR test R-squared is ${formatNumber(gdp5yFit.r_squared, 3)}. The industry/GDP-per-capita diagnostic starts later because World Bank world industry-share data begins in 1991.`;
 
   document.getElementById("regressionSummaryRows").innerHTML = summary
     .map((row) => `
@@ -992,14 +1031,14 @@ function renderRegressionTab(regression) {
         <td><code>${compactEquation(row.equation)}</code></td>
         <td>${formatNumber(row.r_squared, 3)}</td>
         <td>${formatNumber(row.intercept, 4)}</td>
-        <td>${formatNumber(row.gdp_per_capita_coefficient, 3)}</td>
+        <td>${regressionKeyCoefficient(row)}</td>
         <td>${regressionModelReadthrough(row.model_id)}</td>
       </tr>
     `)
     .join("");
 
   document.getElementById("regressionDatasetRows").innerHTML = dataset
-    .slice(-8)
+    .slice(-6)
     .map((row) => `
       <tr>
         <td>${Math.round(row.year)}</td>
@@ -1010,6 +1049,275 @@ function renderRegressionTab(regression) {
       </tr>
     `)
     .join("");
+
+  document.getElementById("regressionGdpDatasetRows").innerHTML = gdpDataset
+    .slice(-8)
+    .map((row) => `
+      <tr>
+        <td>${Math.round(row.year)}</td>
+        <td>${formatSignedPct(row.refined_usage_growth)}</td>
+        <td>${formatSignedPct(row.world_real_gdp_growth)}</td>
+        <td>${formatKt(row.refined_usage_end_kt)}</td>
+      </tr>
+    `)
+    .join("");
+}
+
+function renderWorkbookBalanceChart(rows) {
+  const container = document.getElementById("workbookBalanceChart");
+  const width = 960;
+  const height = 390;
+  const margin = { top: 18, right: 28, bottom: 54, left: 68 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = 260;
+  const years = rows.map((row) => row.year);
+  const [minYear, maxYear] = extent(years);
+  const yValues = rows.flatMap((row) => [row.refined_consumption_kt, row.refined_production_kt]);
+  const [minY, maxY] = extent(yValues);
+  const balanceExtent = Math.max(...rows.map((row) => Math.abs(row.market_balance_kt)), 1);
+  const x = scaleLinear(minYear, maxYear, margin.left, margin.left + chartWidth);
+  const y = scaleLinear(minY * 0.96, maxY * 1.03, margin.top + chartHeight, margin.top);
+  const balanceZeroY = margin.top + chartHeight + 34;
+  const balanceHeight = 46;
+  const barWidth = Math.max(10, chartWidth / rows.length - 10);
+  const yTicks = [minY * 0.98, (minY + maxY) / 2, maxY * 1.01];
+  const yearTicks = rows.filter((row, index) => index % 2 === 0 || row.year === maxYear);
+  const consumptionPath = linePath(rows, (row) => x(row.year), (row) => y(row.refined_consumption_kt));
+  const productionPath = linePath(rows, (row) => x(row.year), (row) => y(row.refined_production_kt));
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatKt(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      ${yearTicks
+        .map(
+          (row) =>
+            `<text x="${x(row.year)}" y="${height - 14}" text-anchor="middle">${row.year}</text>`,
+        )
+        .join("")}
+      <path class="series-demand" d="${consumptionPath}" />
+      <path class="series-supply" d="${productionPath}" />
+      ${rows
+        .map((row) => {
+          const h = (Math.abs(row.market_balance_kt) / balanceExtent) * balanceHeight;
+          const positive = row.market_balance_kt >= 0;
+          return `
+            <rect
+              class="${positive ? "balance-positive" : "balance-negative"}"
+              x="${x(row.year) - barWidth / 2}"
+              y="${positive ? balanceZeroY - h : balanceZeroY}"
+              width="${barWidth}"
+              height="${Math.max(h, 1)}"
+              rx="2"
+            />
+          `;
+        })
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${balanceZeroY}" y2="${balanceZeroY}" />
+      <text x="${margin.left - 38}" y="${height - 16}" text-anchor="start">kt</text>
+    </svg>
+    ${renderLegend([
+      { label: "Refined consumption", color: colors.copper },
+      { label: "Refined production", color: colors.teal },
+      { label: "Market balance", color: colors.red },
+    ])}
+  `;
+}
+
+function renderWorkbookPriceChart(rows) {
+  const container = document.getElementById("workbookPriceChart");
+  const width = 520;
+  const height = 260;
+  const margin = { top: 16, right: 20, bottom: 38, left: 72 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const years = rows.map((row) => row.year);
+  const prices = rows.map((row) => row.copper_price_usd_per_t);
+  const [minYear, maxYear] = extent(years);
+  const [minPrice, maxPrice] = extent(prices);
+  const x = scaleLinear(minYear, maxYear, margin.left, margin.left + chartWidth);
+  const y = scaleLinear(minPrice * 0.92, maxPrice * 1.05, margin.top + chartHeight, margin.top);
+  const path = linePath(rows, (row) => x(row.year), (row) => y(row.copper_price_usd_per_t));
+  const yTicks = [minPrice, (minPrice + maxPrice) / 2, maxPrice];
+  const yearTicks = rows.filter((row, index) => index % 2 === 0 || row.year === maxYear);
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatUsd(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      <path class="series-price" d="${path}" />
+      ${rows
+        .map(
+          (row) =>
+            `<circle cx="${x(row.year)}" cy="${y(row.copper_price_usd_per_t)}" r="3.5" class="price-point" />`,
+        )
+        .join("")}
+      ${yearTicks
+        .map(
+          (row) =>
+            `<text x="${x(row.year)}" y="${height - 12}" text-anchor="middle">${row.year}</text>`,
+        )
+        .join("")}
+    </svg>
+  `;
+}
+
+function renderWorkbookDemandMix(row) {
+  const otherDemand = Math.max(
+    row.total_copper_consumption_kt -
+      row.grid_power_infrastructure_kt -
+      row.evs_renewables_kt -
+      row.china_building_kt,
+    0,
+  );
+  document.getElementById("workbookDemandMixBadge").textContent =
+    `${Math.round(row.year)} total ${formatKt(row.total_copper_consumption_kt)} kt`;
+  renderStackedBreakdown("workbookDemandMixStack", "workbookDemandMixRows", [
+    {
+      label: "Grid & power",
+      value: row.grid_power_infrastructure_kt,
+      color: colors.teal,
+    },
+    {
+      label: "EVs & renewables",
+      value: row.evs_renewables_kt,
+      color: colors.green,
+    },
+    {
+      label: "China building",
+      value: row.china_building_kt,
+      color: colors.copper,
+    },
+    {
+      label: "Other demand",
+      value: otherDemand,
+      color: colors.blue,
+    },
+  ]);
+}
+
+function renderWorkbookSplitRow(label, leftLabel, leftValue, rightLabel, rightValue, leftColor, rightColor) {
+  const total = leftValue + rightValue || 1;
+  return `
+    <div class="split-row">
+      <div class="split-row-header">
+        <strong>${label}</strong>
+        <span>${formatKt(total)} kt</span>
+      </div>
+      <div class="split-track" aria-hidden="true">
+        <span style="width:${(leftValue / total) * 100}%;background:${leftColor}"></span>
+        <span style="width:${(rightValue / total) * 100}%;background:${rightColor}"></span>
+      </div>
+      <div class="split-row-values">
+        <span><span class="legend-swatch" style="background:${leftColor}"></span>${leftLabel}: ${formatPct(
+          leftValue / total,
+          0,
+        )}</span>
+        <span><span class="legend-swatch" style="background:${rightColor}"></span>${rightLabel}: ${formatPct(
+          rightValue / total,
+          0,
+        )}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderWorkbookChinaSplit(row) {
+  document.getElementById("workbookChinaSplitBadge").textContent = `${Math.round(row.year)}`;
+  document.getElementById("workbookChinaSplit").innerHTML = [
+    renderWorkbookSplitRow(
+      "Refined consumption",
+      "China",
+      row.china_refined_consumption_kt,
+      "World ex-China",
+      row.world_ex_china_refined_consumption_kt,
+      colors.copper,
+      colors.blue,
+    ),
+    renderWorkbookSplitRow(
+      "Refined production",
+      "China",
+      row.china_refined_production_kt,
+      "World ex-China",
+      row.world_ex_china_refined_production_kt,
+      colors.copper,
+      colors.teal,
+    ),
+  ].join("");
+}
+
+function renderWorkbookScrapRows(row) {
+  document.getElementById("workbookScrapBadge").textContent =
+    `${Math.round(row.year)} total ${formatKt(row.total_scrap_consumption_kt)} kt`;
+  renderStackedBreakdown("workbookScrapStack", "workbookScrapRows", [
+    {
+      label: "Smelting & refining",
+      value: row.scrap_smelting_refining_kt,
+      color: colors.teal,
+    },
+    {
+      label: "Direct melt",
+      value: row.direct_melt_scrap_kt,
+      color: colors.gold,
+    },
+  ]);
+}
+
+function renderWorkbookRows(rows) {
+  document.getElementById("workbookRows").innerHTML = rows
+    .slice(-6)
+    .map((row) => {
+      const tone = balanceClass(row.market_balance_kt);
+      return `
+        <tr>
+          <td>${Math.round(row.year)}</td>
+          <td>${formatKt(row.refined_production_kt)} kt</td>
+          <td>${formatKt(row.refined_consumption_kt)} kt</td>
+          <td class="${tone}">${formatBalance(row.market_balance_kt)}</td>
+          <td>${formatUsd(row.copper_price_usd_per_t)}</td>
+          <td>${formatPct(row.electrification_share_of_demand)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderWorkbookTab(rows) {
+  const first = rows[0];
+  const last = rows.at(-1);
+  const balanceMetric = document.getElementById("workbookFinalBalance");
+
+  document.getElementById("workbookDataBadge").textContent =
+    `${Math.round(first.year)}-${Math.round(last.year)} from workbook`;
+  balanceMetric.textContent = formatBalance(last.market_balance_kt);
+  balanceMetric.className = balanceClass(last.market_balance_kt);
+  document.getElementById("workbookFinalPrice").textContent = formatUsd(
+    last.copper_price_usd_per_t,
+  );
+  document.getElementById("workbookFinalElectrification").textContent = formatPct(
+    last.electrification_share_of_demand,
+  );
+
+  renderWorkbookBalanceChart(rows);
+  renderWorkbookDemandMix(last);
+  renderWorkbookPriceChart(rows);
+  renderWorkbookChinaSplit(last);
+  renderWorkbookScrapRows(last);
+  renderWorkbookRows(rows);
 }
 
 function setupTabNavigation() {
@@ -1084,7 +1392,15 @@ async function loadJson(url) {
 
 async function init() {
   const files = regressionFiles();
-  const [scenarioEntries, regressionDataset, regressionSummary, regressionFit] =
+  const workbookDataFiles = workbookFiles();
+  const [
+    scenarioEntries,
+    regressionDataset,
+    regressionGdpDataset,
+    regressionSummary,
+    regressionFit,
+    workbookMarketBalance,
+  ] =
     await Promise.all([
       Promise.all(
         SCENARIOS.map(async (scenario) => {
@@ -1102,16 +1418,22 @@ async function init() {
         }),
       ),
       loadDataset(files.dataset),
+      loadDataset(files.gdpDataset),
       loadDataset(files.summary),
       loadDataset(files.fit),
+      loadDataset(workbookDataFiles.marketBalance),
     ]);
 
   const state = {
     scenarios: Object.fromEntries(scenarioEntries),
     regression: {
       dataset: regressionDataset,
+      gdpDataset: regressionGdpDataset,
       summary: regressionSummary,
       fit: regressionFit,
+    },
+    workbook: {
+      marketBalance: workbookMarketBalance,
     },
     selectedScenarioId: "base_case",
   };
@@ -1125,6 +1447,7 @@ async function init() {
   window.addEventListener("resize", () => render(state));
   setupTabNavigation();
   renderRegressionTab(state.regression);
+  renderWorkbookTab(state.workbook.marketBalance);
   render(state);
 }
 
