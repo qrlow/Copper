@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-11-gdp-beta-equations";
+const DATA_VERSION = "2026-07-12-supply-model-gdp-beta-workbook-story-shares";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -51,6 +51,10 @@ function scenarioFiles(id) {
     forecast: versionedAppUrl(`outputs/${id}_forecast.csv`),
     regional: versionedAppUrl(`outputs/${id}_regional_demand.csv`),
     mine: versionedAppUrl(`outputs/${id}_mine_supply_by_country.csv`),
+    supplyAssets: versionedAppUrl(`outputs/${id}_supply_assets.csv`),
+    supplySummary: versionedAppUrl(`outputs/${id}_supply_summary.csv`),
+    supplyBridge: versionedAppUrl(`outputs/${id}_supply_conversion_bridge.csv`),
+    supplySources: versionedAppUrl(`outputs/${id}_supply_sources.csv`),
   };
 }
 
@@ -68,6 +72,9 @@ function regressionFiles() {
 function workbookFiles() {
   return {
     marketBalance: versionedAppUrl("outputs/workbook_market_balance.csv"),
+    demandComponents: versionedAppUrl("outputs/workbook_demand_components.csv"),
+    majorMines: versionedAppUrl("outputs/workbook_major_mines.csv"),
+    mineSupplyCountry: versionedAppUrl("outputs/workbook_mine_supply_country.csv"),
   };
 }
 
@@ -117,6 +124,15 @@ const sourceUrls = {
   regressionSummary: appUrl("outputs/demand_driver_regression_summary.csv"),
   regressionFit: appUrl("outputs/demand_driver_regression_fit.csv"),
   workbookMarketBalance: appUrl("outputs/workbook_market_balance.csv"),
+  workbookDemandComponents: appUrl("outputs/workbook_demand_components.csv"),
+  workbookMajorMines: appUrl("outputs/workbook_major_mines.csv"),
+  workbookMineSupplyCountry: appUrl("outputs/workbook_mine_supply_country.csv"),
+  supplyAssetSeed: appUrl("data/seed/global_copper_supply_assets.csv"),
+  supplyDisruptionsSeed: appUrl("data/seed/global_copper_supply_disruptions.csv"),
+  baseSupplyAssets: appUrl("outputs/base_case_supply_assets.csv"),
+  baseSupplySummary: appUrl("outputs/base_case_supply_summary.csv"),
+  baseSupplyBridge: appUrl("outputs/base_case_supply_conversion_bridge.csv"),
+  baseSupplySources: appUrl("outputs/base_case_supply_sources.csv"),
   icsgHistoricalBalance: appUrl("data/seed/icsg_world_copper_balance_1960_2024.csv"),
 };
 
@@ -422,6 +438,234 @@ function renderMineSupply(rows) {
     .join("");
 }
 
+function riskClass(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "high") return "risk-high";
+  if (normalized === "medium") return "risk-medium";
+  if (normalized === "low") return "risk-low";
+  return "risk-mixed";
+}
+
+function formatMaybeKt(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? `${formatKt(numeric)} kt` : "--";
+}
+
+function supplyRowForYear(summaryRows, year) {
+  return summaryRows.find((row) => Math.round(row.year) === year) ?? summaryRows.at(-1);
+}
+
+function renderSupplyBridge(rows, year) {
+  const bridgeRows = rows
+    .filter((row) => Math.round(row.year) === year)
+    .sort((a, b) => Number(a.step_order) - Number(b.step_order));
+  const container = document.getElementById("supplyBridgeRows");
+  const maxAbs = Math.max(...bridgeRows.map((row) => Math.abs(Number(row.kt))), 1);
+  container.innerHTML = bridgeRows
+    .map((row) => {
+      const value = Number(row.kt);
+      const width = Math.max((Math.abs(value) / maxAbs) * 48, 1);
+      const left = value < 0 ? 50 - width : 50;
+      const tone = value < -1 ? "negative" : value > 1 ? "positive" : "neutral";
+      return `
+        <div class="bridge-row">
+          <div class="bridge-copy">
+            <strong>${row.step}</strong>
+            <span>${row.note}</span>
+          </div>
+          <span class="bridge-track">
+            <span class="bridge-zero"></span>
+            <span class="bridge-fill ${tone}" style="left:${left}%;width:${width}%"></span>
+          </span>
+          <strong class="bridge-value ${tone}">${formatSignedKt(value)} kt</strong>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderSupplyBucketChart(assetRows) {
+  const grouped = Object.values(
+    assetRows.reduce((groups, row) => {
+      const bucket = row.supply_bucket || "Other";
+      groups[bucket] = groups[bucket] || { label: bucket, value: 0 };
+      groups[bucket].value += Number(row.risk_adjusted_mine_supply_kt || 0);
+      return groups;
+    }, {}),
+  );
+  const palette = [colors.copper, colors.teal, colors.gold, colors.green, colors.blue, colors.red];
+  renderStackedBreakdown(
+    "supplyBucketStack",
+    "supplyBucketRows",
+    grouped.map((row, index) => ({ ...row, color: palette[index % palette.length] })),
+  );
+}
+
+function renderSupplyRiskRows(assetRows) {
+  const relevant = assetRows
+    .filter((row) => row.asset !== "Rest of World aggregate")
+    .sort((a, b) => {
+      const bSwing =
+        Number(b.disruption_loss_kt || 0) +
+        Number(b.project_probability_discount_kt || 0) +
+        Number(b.maintenance_loss_kt || 0);
+      const aSwing =
+        Number(a.disruption_loss_kt || 0) +
+        Number(a.project_probability_discount_kt || 0) +
+        Number(a.maintenance_loss_kt || 0);
+      return bSwing - aSwing;
+    })
+    .slice(0, 10);
+
+  document.getElementById("supplyRiskRows").innerHTML = relevant
+    .map((row) => `
+      <tr>
+        <td>${row.asset}<br><small>${row.country}</small></td>
+        <td>${formatMaybeKt(row.disruption_loss_kt)}</td>
+        <td>${formatMaybeKt(row.project_probability_discount_kt)}</td>
+        <td>${formatMaybeKt(row.maintenance_loss_kt)}</td>
+        <td>
+          <span class="risk-pill ${riskClass(row.political_risk)}">${row.political_risk}</span>
+          <span class="risk-pill ${riskClass(row.permitting_risk)}">${row.permitting_risk}</span>
+          <span class="risk-pill ${riskClass(row.infrastructure_risk)}">${row.infrastructure_risk}</span>
+        </td>
+      </tr>
+    `)
+    .join("");
+}
+
+function renderSupplyAssetRows(assetRows) {
+  const rows = [...assetRows]
+    .sort(
+      (a, b) =>
+        Number(b.risk_adjusted_mine_supply_kt || 0) -
+        Number(a.risk_adjusted_mine_supply_kt || 0),
+    )
+    .slice(0, 18);
+  document.getElementById("supplyAssetRows").innerHTML = rows
+    .map((row) => `
+      <tr>
+        <td>${row.asset}<br><small>${row.operator}</small></td>
+        <td>${row.country}</td>
+        <td>${row.supply_bucket}<br><small>${row.production_type}; ${row.route}</small></td>
+        <td>${formatMaybeKt(row.gross_nameplate_kt)}</td>
+        <td>${formatMaybeKt(row.risk_adjusted_mine_supply_kt)}</td>
+        <td>${formatNumber(row.project_probability, 2)}</td>
+        <td>${formatNumber(row.grade_pct, 2)}% / ${formatNumber(row.recovery_pct, 0)}%</td>
+        <td><a href="${row.source_url}" target="_blank" rel="noreferrer">${row.source_name}</a><br><small>${row.assumption_note}</small></td>
+      </tr>
+    `)
+    .join("");
+}
+
+function renderSupplyProjectRows(assetRows) {
+  const rows = assetRows
+    .filter((row) =>
+      ["Committed projects", "Probable projects", "Possible projects", "Suspended supply", "Brownfield and expansion"].includes(
+        row.supply_bucket,
+      ),
+    )
+    .filter((row) => row.asset !== "Rest of World aggregate")
+    .sort(
+      (a, b) =>
+        Number(b.gross_nameplate_kt || 0) - Number(a.gross_nameplate_kt || 0),
+    )
+    .slice(0, 14);
+  document.getElementById("supplyProjectRows").innerHTML = rows
+    .map((row) => `
+      <tr>
+        <td>${row.asset}<br><small>${row.country}</small></td>
+        <td>${row.status}</td>
+        <td>${formatMaybeKt(row.gross_nameplate_kt)}</td>
+        <td>${formatMaybeKt(row.risk_adjusted_mine_supply_kt)}</td>
+        <td>${formatMaybeKt(row.project_probability_discount_kt)}</td>
+        <td>${formatNumber(row.project_probability, 2)}</td>
+      </tr>
+    `)
+    .join("");
+}
+
+function renderSupplySourceRows(rows) {
+  document.getElementById("supplySourceRows").innerHTML = rows
+    .slice(0, 18)
+    .map((row) => `
+      <tr>
+        <td>${row.asset}<br><small>${row.country}</small></td>
+        <td><a href="${row.source_url}" target="_blank" rel="noreferrer">${row.source_name}</a></td>
+        <td>${row.assumption_note}</td>
+      </tr>
+    `)
+    .join("");
+}
+
+function renderSupplyMethodSummary(row) {
+  const cards = [
+    {
+      label: "Mine supply",
+      value: `${formatKt(row.mine_supply_kt)} kt`,
+      detail: `${formatKt(row.operating_mine_supply_kt)} kt operating plus ${formatKt(
+        row.project_and_expansion_supply_kt,
+      )} kt project/expansion supply.`,
+    },
+    {
+      label: "Risk discounts",
+      value: `${formatKt(
+        Number(row.disruption_loss_kt) +
+          Number(row.maintenance_loss_kt) +
+          Number(row.project_probability_discount_kt),
+      )} kt`,
+      detail: "Named disruptions, planned maintenance allowance, and project probability discount.",
+    },
+    {
+      label: "Concentrate route",
+      value: `${formatKt(row.concentrate_supply_kt)} kt`,
+      detail: `${formatKt(row.sxew_supply_kt)} kt is modelled as SX-EW/direct leach output.`,
+    },
+    {
+      label: "Refined conversion",
+      value: `${formatKt(row.primary_refined_supply_kt)} kt`,
+      detail: `${formatKt(row.smelter_refinery_constraint_kt + row.blending_constraint_kt)} kt of smelter/refinery and blending constraint.`,
+    },
+  ];
+  document.getElementById("supplyMethodCards").innerHTML = cards
+    .map((card) => `
+      <article class="narrative-card neutral">
+        <span>${card.label}</span>
+        <strong>${card.value}</strong>
+        <p>${card.detail}</p>
+      </article>
+    `)
+    .join("");
+}
+
+function renderSupplyTab(state, year) {
+  const scenario = state.scenarios[state.selectedScenarioId];
+  const summaryRow = supplyRowForYear(scenario.supplySummary, year);
+  const assetRows = scenario.supplyAssets.filter((row) => Math.round(row.year) === year);
+  if (!summaryRow || !assetRows.length) return;
+
+  document.getElementById("supplyTabBadge").textContent = `${scenario.label} ${year}`;
+  document.getElementById("supplyMineMetric").textContent = `${formatKt(summaryRow.mine_supply_kt)} kt`;
+  document.getElementById("supplyPrimaryMetric").textContent = `${formatKt(
+    summaryRow.primary_refined_supply_kt,
+  )} kt`;
+  document.getElementById("supplyConstraintMetric").textContent = `${formatKt(
+    Number(summaryRow.smelter_refinery_constraint_kt) + Number(summaryRow.blending_constraint_kt),
+  )} kt`;
+  document.getElementById("supplyModelLink").textContent =
+    `The Model tab uses ${formatKt(summaryRow.primary_refined_supply_kt)} kt primary refined supply plus ${formatKt(
+      summaryRow.secondary_refined_supply_kt,
+    )} kt secondary refined supply in ${year}.`;
+
+  renderSupplyMethodSummary(summaryRow);
+  renderSupplyBridge(scenario.supplyBridge, year);
+  renderSupplyBucketChart(assetRows);
+  renderSupplyRiskRows(assetRows);
+  renderSupplyAssetRows(assetRows);
+  renderSupplyProjectRows(assetRows);
+  renderSupplySourceRows(scenario.supplySources);
+}
+
 function renderStackedBreakdown(stackId, listId, rows) {
   const total = rows.reduce((sum, row) => sum + row.value, 0);
   const sorted = [...rows].sort((a, b) => b.value - a.value);
@@ -549,24 +793,20 @@ function renderFactorBreakdowns(forecastRow, regionalRows, config) {
     });
   }
 
-  const recentSupplyGrowth =
-    forecastRow.primary_supply_growth -
-    Number(config.supply.project_pipeline_growth) +
-    Number(config.supply.disruption_loss);
   const primaryRows = [
     {
-      label: "Recent supply growth",
-      detail: "USGS mine-production growth, clipped by scenario bounds",
-      value: recentSupplyGrowth,
+      label: "Supply tab primary growth",
+      detail: "year-on-year primary refined growth from mine-level supply bridge",
+      value: Number(forecastRow.primary_supply_growth),
     },
     {
-      label: "Project pipeline growth",
-      detail: "scenario assumption for added mine/refinery supply",
+      label: "Project credit knob",
+      detail: "scenario input used by the Supply tab to scale project probabilities",
       value: Number(config.supply.project_pipeline_growth),
     },
     {
-      label: "Disruption loss",
-      detail: "subtracted from primary supply growth",
+      label: "Disruption stress knob",
+      detail: "scenario input used by the Supply tab to scale named disruption losses",
       value: -Number(config.supply.disruption_loss),
     },
   ];
@@ -900,16 +1140,25 @@ function renderScenarioExplanation(state) {
     {
       label: "Mine/refinery project growth",
       source: sourceNote(
-        "ICSG refinery-capacity data says capacity is expected to grow through 2028, but capacity is not the same as production. The annual production-growth number here is a conservative scenario assumption.",
-        [sourceLink("ICSG capacity trends", sourceUrls.icsgFactbook), ...configLinkItems()],
+        "Primary supply is built in the Supply tab from asset-level production, ramp-ups, project probability, disruptions, and mine-to-refined conversion constraints. This scenario knob changes how much project supply is credited.",
+        [
+          sourceLink("Supply asset seed", sourceUrls.supplyAssetSeed),
+          sourceLink("Supply summary", sourceUrls.baseSupplySummary),
+          sourceLink("ICSG capacity trends", sourceUrls.icsgFactbook),
+          ...configLinkItems(),
+        ],
       ),
       format: (config) => `${formatPct(config.supply.project_pipeline_growth)} per year`,
     },
     {
       label: "Disruption loss",
       source: sourceNote(
-        "ICSG highlights constraints on copper supply. The loss percentage is a scenario stress assumption for outages, grades, delays, and operating disruption.",
-        [sourceLink("ICSG supply constraints", sourceUrls.icsgFactbook), ...configLinkItems()],
+        "Named disruption rows are stored in the supply disruption seed. The scenario disruption knob scales those expected losses and operating-risk allowances.",
+        [
+          sourceLink("Supply disruptions", sourceUrls.supplyDisruptionsSeed),
+          sourceLink("ICSG supply constraints", sourceUrls.icsgFactbook),
+          ...configLinkItems(),
+        ],
       ),
       format: (config) => `${formatPct(config.supply.disruption_loss)} per year`,
     },
@@ -1408,7 +1657,338 @@ function renderWorkbookRows(rows) {
     .join("");
 }
 
-function renderWorkbookTab(rows) {
+function workbookYearRow(rows, year) {
+  return rows.find((row) => Math.round(row.year) === year) ?? rows.at(-1);
+}
+
+function workbookDemandValue(rows, region, component, year) {
+  const row = rows.find(
+    (item) =>
+      item.region === region &&
+      item.component === component &&
+      Math.round(item.year) === year,
+  );
+  return Number(row?.consumption_kt || 0);
+}
+
+function workbookSeries(rows, keyField, key, valueField) {
+  return rows
+    .filter((row) => row[keyField] === key)
+    .sort((a, b) => a.year - b.year)
+    .map((row) => ({ year: Number(row.year), value: Number(row[valueField] || 0) }));
+}
+
+function renderWorkbookNarrative(workbook) {
+  const marketRows = workbook.marketBalance;
+  const demandRows = workbook.demandComponents;
+  const countryRows = workbook.mineSupplyCountry;
+  const start = workbookYearRow(marketRows, 2024);
+  const end = workbookYearRow(marketRows, 2030);
+  const balanceTightening = end.market_balance_kt - start.market_balance_kt;
+  const demandGrowth = end.refined_consumption_kt - start.refined_consumption_kt;
+  const productionGrowth = end.refined_production_kt - start.refined_production_kt;
+  const transitionComponents = [
+    "Solar",
+    "Onshore Wind",
+    "Offshore Wind",
+    "EVs",
+    "Grid & Power Infrastructure",
+  ];
+  const transitionGrowth = transitionComponents.reduce(
+    (sum, component) =>
+      sum +
+      workbookDemandValue(demandRows, "World", component, 2030) -
+      workbookDemandValue(demandRows, "World", component, 2024),
+    0,
+  );
+  const disruptionLoss =
+    end.mine_production_pre_disruption_kt - end.mine_production_kt;
+  const country2030 = countryRows
+    .filter((row) => Math.round(row.year) === 2030 && row.country !== "World")
+    .sort((a, b) => b.mine_supply_kt - a.mine_supply_kt);
+  const worldMine2030 = Number(
+    countryRows.find((row) => row.country === "World" && Math.round(row.year) === 2030)
+      ?.mine_supply_kt || 0,
+  );
+  const topThree = country2030.filter((row) => row.country !== "Rest of World").slice(0, 3);
+  const topThreeShare =
+    worldMine2030 > 0
+      ? topThree.reduce((sum, row) => sum + Number(row.mine_supply_kt || 0), 0) /
+        worldMine2030
+      : 0;
+
+  document.getElementById("workbookNarrativeLead").textContent =
+    `The workbook tells a tightening story: refined copper moves from a ${formatBalance(
+      start.market_balance_kt,
+    )} in 2024 to a ${formatBalance(end.market_balance_kt)} in 2030, while the price path rises to ${formatUsd(
+      end.copper_price_usd_per_t,
+    )}/t.`;
+
+  document.getElementById("workbookNarrativeCards").innerHTML = [
+    {
+      label: "Balance pivots tighter",
+      value: `${formatSignedKt(balanceTightening)} kt`,
+      detail: `Production adds ${formatKt(productionGrowth)} kt, but refined consumption adds ${formatKt(
+        demandGrowth,
+      )} kt from 2024 to 2030.`,
+      tone: balanceTightening < 0 ? "negative" : "positive",
+    },
+    {
+      label: "Transition demand carries the growth",
+      value: `${formatKt(transitionGrowth)} kt`,
+      detail: `Grid, renewables, and EVs add more than the net demand increase, offsetting declines in buildings and ICE transport.`,
+      tone: "positive",
+    },
+    {
+      label: "Supply risk is concentrated",
+      value: `${formatPct(topThreeShare, 0)}`,
+      detail: `${topThree.map((row) => row.country).join(", ")} account for this share of 2030 mine supply in the workbook.`,
+      tone: "neutral",
+    },
+    {
+      label: "Disruption allowance matters",
+      value: `${formatKt(disruptionLoss)} kt`,
+      detail: `The 2030 mine output line is reduced by the model's ${formatPct(
+        end.disruption_allowance,
+        1,
+      )} disruption allowance.`,
+      tone: "negative",
+    },
+  ]
+    .map(
+      (card) => `
+        <article class="narrative-card ${card.tone}">
+          <span>${card.label}</span>
+          <strong>${card.value}</strong>
+          <p>${card.detail}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderWorkbookBalanceBridge(rows) {
+  const start = workbookYearRow(rows, 2024);
+  const end = workbookYearRow(rows, 2030);
+  const productionGrowth = end.refined_production_kt - start.refined_production_kt;
+  const consumptionGrowth = end.refined_consumption_kt - start.refined_consumption_kt;
+  const bridgeRows = [
+    {
+      label: "2024 balance",
+      value: start.market_balance_kt,
+      detail: "starting point",
+    },
+    {
+      label: "Refined production change",
+      value: productionGrowth,
+      detail: "adds supply",
+    },
+    {
+      label: "Refined consumption change",
+      value: -consumptionGrowth,
+      detail: "absorbs supply",
+    },
+    {
+      label: "2030 balance",
+      value: end.market_balance_kt,
+      detail: "ending point",
+    },
+  ];
+  const maxAbs = Math.max(...bridgeRows.map((row) => Math.abs(row.value)), 1);
+  document.getElementById("workbookBalanceBridge").innerHTML = bridgeRows
+    .map((row) => {
+      const width = Math.max((Math.abs(row.value) / maxAbs) * 48, 1);
+      const left = row.value < 0 ? 50 - width : 50;
+      const tone = row.value < -100 ? "negative" : row.value > 100 ? "positive" : "neutral";
+      return `
+        <div class="bridge-row">
+          <div class="bridge-copy">
+            <strong>${row.label}</strong>
+            <span>${row.detail}</span>
+          </div>
+          <span class="bridge-track">
+            <span class="bridge-zero"></span>
+            <span class="bridge-fill ${tone}" style="left:${left}%;width:${width}%"></span>
+          </span>
+          <strong class="bridge-value ${tone}">${formatSignedKt(row.value)} kt</strong>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderWorkbookComponentTrendChart(rows) {
+  const container = document.getElementById("workbookComponentTrendChart");
+  const components = [
+    { name: "Grid & Power Infrastructure", label: "Grid & power", color: colors.teal },
+    { name: "EVs", label: "EVs", color: colors.green },
+    { name: "Buildings", label: "Buildings", color: colors.copper },
+    { name: "ICE", label: "ICE", color: colors.red },
+    { name: "Data", label: "Data", color: colors.gold },
+  ];
+  const series = components.map((component) => {
+    const values = workbookSeries(
+      rows.filter((row) => row.region === "World"),
+      "component",
+      component.name,
+      "consumption_kt",
+    );
+    const base = values.find((row) => row.year === 2024)?.value || values[0]?.value || 1;
+    return {
+      ...component,
+      values: values.map((row) => ({ year: row.year, value: (row.value / base) * 100 })),
+    };
+  });
+  const allPoints = series.flatMap((item) => item.values);
+  const years = allPoints.map((row) => row.year);
+  const values = allPoints.map((row) => row.value);
+  const [minYear, maxYear] = extent(years);
+  const [minValue, maxValue] = extent(values);
+  const width = 960;
+  const height = 330;
+  const margin = { top: 18, right: 28, bottom: 54, left: 68 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const x = scaleLinear(minYear, maxYear, margin.left, margin.left + chartWidth);
+  const y = scaleLinear(Math.min(80, minValue * 0.96), maxValue * 1.06, margin.top + chartHeight, margin.top);
+  const yTicks = [80, 100, Math.ceil(maxValue / 25) * 25];
+  const yearTicks = allPoints
+    .filter((row, index) => index < 12)
+    .filter((row, index) => index % 2 === 0 || row.year === maxYear);
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${Math.round(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      ${yearTicks
+        .map(
+          (row) =>
+            `<text x="${x(row.year)}" y="${height - 14}" text-anchor="middle">${row.year}</text>`,
+        )
+        .join("")}
+      ${series
+        .map(
+          (item) =>
+            `<path class="component-line" d="${linePath(
+              item.values,
+              (row) => x(row.year),
+              (row) => y(row.value),
+            )}" style="stroke:${item.color}" />`,
+        )
+        .join("")}
+      <text x="${margin.left - 42}" y="${height - 16}" text-anchor="start">2024=100</text>
+    </svg>
+    ${renderLegend(series.map((item) => ({ label: item.label, color: item.color })))}
+  `;
+}
+
+function renderWorkbookDemandMoverRows(rows) {
+  const worldRows = rows.filter((row) => row.region === "World" && row.component !== "Total");
+  const components = [...new Set(worldRows.map((row) => row.component))];
+  const movers = components
+    .map((component) => {
+      const start = workbookDemandValue(rows, "World", component, 2024);
+      const end = workbookDemandValue(rows, "World", component, 2030);
+      const total2024 = workbookDemandValue(rows, "World", "Total", 2024);
+      const total2030 = workbookDemandValue(rows, "World", "Total", 2030);
+      return {
+        component,
+        start,
+        end,
+        change: end - start,
+        startShare: total2024 > 0 ? start / total2024 : 0,
+        endShare: total2030 > 0 ? end / total2030 : 0,
+      };
+    })
+    .sort((a, b) => b.change - a.change);
+  document.getElementById("workbookDemandMoverRows").innerHTML = movers
+    .map((row) => {
+      const tone = row.change < -100 ? "negative" : row.change > 100 ? "positive" : "";
+      return `
+        <tr>
+          <td>${row.component}</td>
+          <td>${formatKt(row.start)} kt</td>
+          <td>${formatPct(row.startShare)}</td>
+          <td>${formatKt(row.end)} kt</td>
+          <td class="${tone}">${formatSignedKt(row.change)} kt</td>
+          <td>${formatPct(row.endShare)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderWorkbookCountrySupply(rows) {
+  const countryRows = rows
+    .filter((row) => Math.round(row.year) === 2030 && row.country !== "World")
+    .sort((a, b) => b.mine_supply_kt - a.mine_supply_kt)
+    .slice(0, 10);
+  const max = Math.max(...countryRows.map((row) => row.mine_supply_kt), 1);
+  document.getElementById("workbookCountrySupplyChart").innerHTML = countryRows
+    .map((row) => {
+      const start = Number(
+        rows.find((item) => item.country === row.country && Math.round(item.year) === 2024)
+          ?.mine_supply_kt || 0,
+      );
+      const change = Number(row.mine_supply_kt || 0) - start;
+      const tone = change < -50 ? "negative" : change > 50 ? "positive" : "neutral";
+      return `
+        <div class="country-row">
+          <span class="bar-label" title="${row.country}">${row.country}</span>
+          <span class="bar-track">
+            <span class="bar-fill" style="width:${(row.mine_supply_kt / max) * 100}%"></span>
+          </span>
+          <span class="country-value">${formatKt(row.mine_supply_kt)} kt</span>
+          <span class="country-change ${tone}">${formatSignedKt(change)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderWorkbookMineMovers(rows) {
+  const mines = [...new Set(rows.map((row) => row.mine))];
+  const movers = mines
+    .map((mine) => {
+      const start = Number(
+        rows.find((row) => row.mine === mine && Math.round(row.year) === 2024)
+          ?.mine_supply_kt || 0,
+      );
+      const end = Number(
+        rows.find((row) => row.mine === mine && Math.round(row.year) === 2030)
+          ?.mine_supply_kt || 0,
+      );
+      return { mine, start, end, change: end - start };
+    })
+    .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+    .slice(0, 10);
+  document.getElementById("workbookMineMoverRows").innerHTML = movers
+    .map((row) => {
+      const tone = row.change < -25 ? "negative" : row.change > 25 ? "positive" : "";
+      return `
+        <tr>
+          <td>${row.mine}</td>
+          <td>${formatKt(row.start)} kt</td>
+          <td>${formatKt(row.end)} kt</td>
+          <td class="${tone}">${formatSignedKt(row.change)} kt</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderWorkbookTab(workbook) {
+  const rows = Array.isArray(workbook) ? workbook : workbook.marketBalance;
+  const workbookData = Array.isArray(workbook)
+    ? { marketBalance: rows, demandComponents: [], majorMines: [], mineSupplyCountry: [] }
+    : workbook;
   const first = rows[0];
   const last = rows.at(-1);
   const balanceMetric = document.getElementById("workbookFinalBalance");
@@ -1430,6 +2010,18 @@ function renderWorkbookTab(rows) {
   renderWorkbookChinaSplit(last);
   renderWorkbookScrapRows(last);
   renderWorkbookRows(rows);
+  if (
+    workbookData.demandComponents.length &&
+    workbookData.mineSupplyCountry.length &&
+    workbookData.majorMines.length
+  ) {
+    renderWorkbookNarrative(workbookData);
+    renderWorkbookBalanceBridge(rows);
+    renderWorkbookComponentTrendChart(workbookData.demandComponents);
+    renderWorkbookDemandMoverRows(workbookData.demandComponents);
+    renderWorkbookCountrySupply(workbookData.mineSupplyCountry);
+    renderWorkbookMineMovers(workbookData.majorMines);
+  }
 }
 
 function setupTabNavigation() {
@@ -1484,6 +2076,7 @@ function render(state) {
   renderSupplyMix(selectedForecast);
   renderRegionalDemand(selectedRegional);
   renderMineSupply(selectedMine);
+  renderSupplyTab(state, year);
 }
 
 async function loadDataset(url) {
@@ -1514,20 +2107,47 @@ async function init() {
     regressionSummary,
     regressionFit,
     workbookMarketBalance,
+    workbookDemandComponents,
+    workbookMajorMines,
+    workbookMineSupplyCountry,
   ] =
     await Promise.all([
       Promise.all(
         SCENARIOS.map(async (scenario) => {
           const scenarioDataFiles = scenarioFiles(scenario.id);
-          const [config, forecast, regional, mine] = await Promise.all([
+          const [
+            config,
+            forecast,
+            regional,
+            mine,
+            supplyAssets,
+            supplySummary,
+            supplyBridge,
+            supplySources,
+          ] = await Promise.all([
             loadJson(scenarioDataFiles.config),
             loadDataset(scenarioDataFiles.forecast),
             loadDataset(scenarioDataFiles.regional),
             loadDataset(scenarioDataFiles.mine),
+            loadDataset(scenarioDataFiles.supplyAssets),
+            loadDataset(scenarioDataFiles.supplySummary),
+            loadDataset(scenarioDataFiles.supplyBridge),
+            loadDataset(scenarioDataFiles.supplySources),
           ]);
           return [
             scenario.id,
-            { ...scenario, files: scenarioDataFiles, config, forecast, regional, mine },
+            {
+              ...scenario,
+              files: scenarioDataFiles,
+              config,
+              forecast,
+              regional,
+              mine,
+              supplyAssets,
+              supplySummary,
+              supplyBridge,
+              supplySources,
+            },
           ];
         }),
       ),
@@ -1538,6 +2158,9 @@ async function init() {
       loadDataset(files.summary),
       loadDataset(files.fit),
       loadDataset(workbookDataFiles.marketBalance),
+      loadDataset(workbookDataFiles.demandComponents),
+      loadDataset(workbookDataFiles.majorMines),
+      loadDataset(workbookDataFiles.mineSupplyCountry),
     ]);
 
   const state = {
@@ -1552,6 +2175,9 @@ async function init() {
     },
     workbook: {
       marketBalance: workbookMarketBalance,
+      demandComponents: workbookDemandComponents,
+      majorMines: workbookMajorMines,
+      mineSupplyCountry: workbookMineSupplyCountry,
     },
     selectedScenarioId: "base_case",
   };
@@ -1565,7 +2191,7 @@ async function init() {
   window.addEventListener("resize", () => render(state));
   setupTabNavigation();
   renderRegressionTab(state.regression);
-  renderWorkbookTab(state.workbook.marketBalance);
+  renderWorkbookTab(state.workbook);
   render(state);
 }
 

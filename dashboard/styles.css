@@ -219,6 +219,81 @@ input[type="range"] {
   display: none;
 }
 
+.supply-hero {
+  margin-bottom: 16px;
+}
+
+.supply-lede {
+  max-width: 980px;
+  margin: 10px 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.supply-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.supply-grid .panel.wide {
+  grid-column: 1 / -1;
+}
+
+.formula-strip {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.formula-strip code {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7f3;
+  color: #4d4942;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin: 0 4px 4px 0;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.risk-low {
+  background: #eef5eb;
+  color: #3d632d;
+}
+
+.risk-medium,
+.risk-mixed {
+  background: #fbf4df;
+  color: #7a5a12;
+}
+
+.risk-high {
+  background: #f9e8e6;
+  color: #9a2f2f;
+}
+
+.supply-asset-table td:last-child,
+.supply-source-table td:last-child {
+  min-width: 280px;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
@@ -935,6 +1010,14 @@ input[type="range"] {
   font-size: 13px;
 }
 
+.workbook-narrative-lead {
+  margin: -4px 0 16px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .regression-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -961,8 +1044,151 @@ input[type="range"] {
   grid-column: 1 / -1;
 }
 
+.narrative-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.narrative-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf9f6;
+}
+
+.narrative-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.narrative-card strong {
+  display: block;
+  margin: 7px 0;
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1;
+}
+
+.narrative-card.positive strong {
+  color: var(--green);
+}
+
+.narrative-card.negative strong {
+  color: var(--red);
+}
+
+.narrative-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.bridge-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bridge-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.75fr) minmax(180px, 1fr) 110px;
+  gap: 12px;
+  align-items: center;
+  min-height: 38px;
+}
+
+.bridge-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bridge-copy strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.bridge-copy span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bridge-track {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.bridge-zero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: #8c877d;
+}
+
+.bridge-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 2px;
+  border-radius: 999px;
+}
+
+.bridge-fill.positive {
+  background: var(--green);
+}
+
+.bridge-fill.negative {
+  background: var(--red);
+}
+
+.bridge-fill.neutral {
+  background: var(--gold);
+}
+
+.bridge-value {
+  text-align: right;
+  color: var(--ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bridge-value.positive,
+.country-change.positive,
+.compact-table td.positive {
+  color: var(--green);
+}
+
+.bridge-value.negative,
+.country-change.negative,
+.compact-table td.negative {
+  color: var(--red);
+}
+
 .compact-chart {
   min-height: 240px;
+}
+
+.component-trend-chart {
+  min-height: 310px;
+}
+
+.component-line {
+  fill: none;
+  stroke-width: 3;
+}
+
+.workbook-demand-movers {
+  margin-top: 14px;
 }
 
 .series-price {
@@ -1028,6 +1254,35 @@ input[type="range"] {
 
 .workbook-table {
   min-width: 940px;
+}
+
+.workbook-country-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.country-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 138px) minmax(0, 1fr) 86px 60px;
+  gap: 10px;
+  align-items: center;
+  min-height: 31px;
+  font-size: 13px;
+}
+
+.country-value,
+.country-change {
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.country-change.neutral {
+  color: var(--muted);
+}
+
+.mine-mover-table {
+  min-width: 560px;
 }
 
 .regression-grid {
@@ -1279,6 +1534,10 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
+  .narrative-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .panel.wide {
     grid-column: 1 / -1;
   }
@@ -1299,7 +1558,8 @@ input[type="range"] {
   .regression-grid,
   .regression-plot-grid,
   .workbook-metrics,
-  .workbook-grid {
+  .workbook-grid,
+  .supply-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1318,6 +1578,27 @@ input[type="range"] {
 
   .comparison-bar-row strong {
     grid-column: 2;
+  }
+
+  .narrative-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bridge-row {
+    grid-template-columns: 1fr 92px;
+  }
+
+  .bridge-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .country-row {
+    grid-template-columns: minmax(84px, 112px) minmax(0, 1fr) 74px;
+  }
+
+  .country-change {
+    grid-column: 3;
   }
 
   .chart.large {

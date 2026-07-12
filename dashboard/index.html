@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-11-gdp-beta-equations" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-12-supply-model-gdp-beta-workbook-story-shares" />
   </head>
   <body>
     <main class="app-shell">
@@ -28,6 +28,7 @@
 
       <nav class="app-tabs" aria-label="Dashboard views" role="tablist">
         <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="supplyTab">Supply</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Workbook Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">GDP-Copper Usage Relationship</button>
       </nav>
@@ -180,7 +181,7 @@
             <h3>Secondary refined</h3>
             <div id="secondaryFactorRows" class="factor-list"></div>
           </div>
-          <p class="panel-note">Supply growth drivers are annual formula assumptions applied after the 2024 base year.</p>
+          <p class="panel-note">Primary refined supply now comes from the Supply tab's mine-level forecast and conversion bridge. Secondary refined supply still follows the scrap/recycling response rule.</p>
         </article>
       </section>
 
@@ -199,7 +200,7 @@
             <span class="badge">Scenario assumption</span>
           </div>
           <div id="supplyMixChart" class="chart donut" role="img" aria-label="Primary and secondary refined copper supply"></div>
-          <p class="panel-note">Primary refined copper comes from mined material. Secondary refined copper comes from scrap or recycled copper. This split is set in the scenario JSON.</p>
+          <p class="panel-note">Primary refined copper is linked to the Supply tab's mine-supply and conversion bridge. Secondary refined copper comes from scrap or recycled copper.</p>
         </article>
 
         <article class="panel">
@@ -325,13 +326,178 @@
             <a href="../outputs/base_case_forecast.csv" target="_blank" rel="noreferrer">Global forecast CSV</a>
             <a href="../outputs/base_case_regional_demand.csv" target="_blank" rel="noreferrer">Regional demand CSV</a>
             <a href="../outputs/base_case_mine_supply_by_country.csv" target="_blank" rel="noreferrer">Mine supply CSV</a>
+            <a href="../outputs/base_case_supply_assets.csv" target="_blank" rel="noreferrer">Supply assets CSV</a>
+            <a href="../outputs/base_case_supply_summary.csv" target="_blank" rel="noreferrer">Supply summary CSV</a>
+            <a href="../outputs/base_case_supply_conversion_bridge.csv" target="_blank" rel="noreferrer">Supply conversion bridge CSV</a>
+            <a href="../data/seed/global_copper_supply_assets.csv" target="_blank" rel="noreferrer">Supply asset seed CSV</a>
+            <a href="../data/seed/global_copper_supply_disruptions.csv" target="_blank" rel="noreferrer">Supply disruption seed CSV</a>
             <a href="../outputs/bull_case_forecast.csv" target="_blank" rel="noreferrer">Bull forecast CSV</a>
             <a href="../outputs/bear_case_forecast.csv" target="_blank" rel="noreferrer">Bear forecast CSV</a>
             <a href="../outputs/workbook_market_balance.csv" target="_blank" rel="noreferrer">Workbook market balance CSV</a>
+            <a href="../outputs/workbook_demand_components.csv" target="_blank" rel="noreferrer">Workbook demand components CSV</a>
+            <a href="../outputs/workbook_mine_supply_country.csv" target="_blank" rel="noreferrer">Workbook mine supply by country CSV</a>
+            <a href="../outputs/workbook_major_mines.csv" target="_blank" rel="noreferrer">Workbook major mines CSV</a>
           </article>
         </div>
       </section>
       </div>
+
+      <section id="supplyTab" class="tab-panel is-hidden" aria-labelledby="supplyHeading">
+        <section class="panel supply-hero">
+          <div class="panel-header">
+            <h2 id="supplyHeading">Supply</h2>
+            <span id="supplyTabBadge" class="badge">--</span>
+          </div>
+          <p class="supply-lede">This tab builds the supply side from mine-level production, project ramp-ups, disruption allowances, project probabilities, and a separate mine-to-refined conversion bridge. Mine supply is not treated as refined supply.</p>
+          <p id="supplyModelLink" class="workbook-narrative-lead">--</p>
+          <div class="workbook-metrics" aria-label="Supply summary metrics">
+            <article class="metric compact">
+              <span>Mine Supply</span>
+              <strong id="supplyMineMetric">--</strong>
+              <small>risk-adjusted copper content</small>
+            </article>
+            <article class="metric compact">
+              <span>Primary Refined</span>
+              <strong id="supplyPrimaryMetric">--</strong>
+              <small>linked into Model tab</small>
+            </article>
+            <article class="metric compact">
+              <span>Conversion Constraint</span>
+              <strong id="supplyConstraintMetric">--</strong>
+              <small>smelter/refinery/blending</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="supply-grid" aria-label="Supply model details">
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Supply Method</h2>
+              <span class="badge">selected year</span>
+            </div>
+            <div id="supplyMethodCards" class="narrative-grid" aria-label="Supply method summary"></div>
+            <div class="formula-strip">
+              <code>contained copper kt = ore processed Mt * grade % * recovery % * 10</code>
+              <code>achievable mine supply = gross output - maintenance - disruptions - project probability discount</code>
+              <code>refined supply = primary refined after conversion constraints + secondary refined</code>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Mine Supply To Refined Supply Bridge</h2>
+              <span class="badge">kt copper</span>
+            </div>
+            <div id="supplyBridgeRows" class="bridge-list" aria-label="Supply conversion bridge"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Supply Buckets</h2>
+              <span class="badge">mine supply</span>
+            </div>
+            <div id="supplyBucketStack" class="stacked-breakdown" role="img" aria-label="Mine supply by bucket"></div>
+            <div id="supplyBucketRows" class="breakdown-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Risk & Disruption</h2>
+              <span class="badge">largest expected losses</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table supply-risk-table">
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>Disruption</th>
+                    <th>Probability discount</th>
+                    <th>Maintenance</th>
+                    <th>Risk tags</th>
+                  </tr>
+                </thead>
+                <tbody id="supplyRiskRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Asset-Level Forecast</h2>
+              <span class="badge">top contributors</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table supply-asset-table">
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>Country</th>
+                    <th>Bucket</th>
+                    <th>Gross</th>
+                    <th>Risk-adjusted</th>
+                    <th>Probability</th>
+                    <th>Grade / recovery</th>
+                    <th>Source and assumption</th>
+                  </tr>
+                </thead>
+                <tbody id="supplyAssetRows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Project Pipeline</h2>
+              <span class="badge">nameplate vs risk-adjusted</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table supply-project-table">
+                <thead>
+                  <tr>
+                    <th>Project / expansion</th>
+                    <th>Status</th>
+                    <th>Gross nameplate</th>
+                    <th>Risk-adjusted</th>
+                    <th>Discount</th>
+                    <th>Probability</th>
+                  </tr>
+                </thead>
+                <tbody id="supplyProjectRows"></tbody>
+              </table>
+            </div>
+            <p class="panel-note">The attached ICSG project chart is used as a pipeline anchor for large projects above roughly 100 ktpa Cu. Company sources and explicit model probabilities determine how much enters the risk-adjusted forecast.</p>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Supply Sources & Assumptions</h2>
+              <span class="badge">audit trail</span>
+            </div>
+            <div class="source-card embedded">
+              <h3>Core Public Sources</h3>
+              <p>USGS anchors the 2024 global mine/refinery totals. ICSG anchors the large-project universe and refined-production route split. Company pages and reports anchor individual asset context. Assumptions are shown row by row where public data is incomplete.</p>
+              <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf" target="_blank" rel="noreferrer">USGS MCS 2026</a>
+              <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
+              <a href="../data/seed/global_copper_supply_assets.csv" target="_blank" rel="noreferrer">Supply asset seed CSV</a>
+              <a href="../data/seed/global_copper_supply_disruptions.csv" target="_blank" rel="noreferrer">Supply disruption seed CSV</a>
+              <a href="../outputs/base_case_supply_summary.csv" target="_blank" rel="noreferrer">Supply summary CSV</a>
+              <a href="../outputs/base_case_supply_conversion_bridge.csv" target="_blank" rel="noreferrer">Supply bridge CSV</a>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table supply-source-table">
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>Source</th>
+                    <th>Assumption note</th>
+                  </tr>
+                </thead>
+                <tbody id="supplySourceRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </section>
 
       <section id="workbookTab" class="tab-panel is-hidden" aria-labelledby="workbookHeading">
         <section class="panel workbook-hero">
@@ -340,6 +506,7 @@
             <span id="workbookDataBadge" class="badge">--</span>
           </div>
           <p class="workbook-lede">Yearly copper supply, demand, price, scrap, and electrification rows extracted from the workbook's <code>Market Balance</code> sheet.</p>
+          <p id="workbookNarrativeLead" class="workbook-narrative-lead">--</p>
           <div class="workbook-metrics" aria-label="Workbook summary metrics">
             <article class="metric compact">
               <span>2030 Balance</span>
@@ -360,6 +527,15 @@
         </section>
 
         <section class="workbook-grid" aria-label="Workbook market-balance visuals">
+          <article class="panel wide workbook-story-panel">
+            <div class="panel-header">
+              <h2>Workbook Narrative</h2>
+              <span class="badge">2024 to 2030</span>
+            </div>
+            <div id="workbookNarrativeCards" class="narrative-grid" aria-label="Workbook narrative metrics"></div>
+            <div id="workbookBalanceBridge" class="bridge-list" aria-label="Workbook balance bridge"></div>
+          </article>
+
           <article class="panel wide">
             <div class="panel-header">
               <h2>Refined Market Balance</h2>
@@ -385,6 +561,29 @@
             <div id="workbookPriceChart" class="chart compact-chart" role="img" aria-label="Workbook copper price path"></div>
           </article>
 
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Demand Component Trends</h2>
+              <span class="badge">index, 2024 = 100</span>
+            </div>
+            <div id="workbookComponentTrendChart" class="chart component-trend-chart" role="img" aria-label="Workbook demand component trend index"></div>
+            <div class="compact-table-wrap workbook-demand-movers">
+              <table class="compact-table workbook-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>2024</th>
+                    <th>2024 share</th>
+                    <th>2030</th>
+                    <th>Change</th>
+                    <th>2030 share</th>
+                  </tr>
+                </thead>
+                <tbody id="workbookDemandMoverRows"></tbody>
+              </table>
+            </div>
+          </article>
+
           <article class="panel">
             <div class="panel-header">
               <h2>China Split</h2>
@@ -400,6 +599,34 @@
             </div>
             <div id="workbookScrapStack" class="stacked-breakdown" role="img" aria-label="Workbook scrap system components"></div>
             <div id="workbookScrapRows" class="breakdown-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Mine Supply By Country</h2>
+              <span class="badge">2030 rank</span>
+            </div>
+            <div id="workbookCountrySupplyChart" class="workbook-country-bars" role="img" aria-label="Workbook mine supply by country ranking"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Major Mine Movers</h2>
+              <span class="badge">2024 to 2030</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table mine-mover-table">
+                <thead>
+                  <tr>
+                    <th>Mine</th>
+                    <th>2024</th>
+                    <th>2030</th>
+                    <th>Change</th>
+                  </tr>
+                </thead>
+                <tbody id="workbookMineMoverRows"></tbody>
+              </table>
+            </div>
           </article>
 
           <article class="panel wide">
@@ -568,6 +795,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-11-gdp-beta-equations"></script>
+    <script src="./app.js?v=2026-07-12-supply-model-gdp-beta-workbook-story-shares"></script>
   </body>
 </html>

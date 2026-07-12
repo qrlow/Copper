@@ -10,6 +10,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copper_model.supply import build_supply_forecast
+
 GDP = "gdp_constant_usd"
 INDUSTRY = "industry_value_added_constant_usd"
 INDUSTRY_SHARE = "industry_value_added_share_of_gdp"
@@ -21,6 +23,10 @@ class ModelOutputs:
     forecast: pd.DataFrame
     regional_demand: pd.DataFrame
     mine_supply_by_country: pd.DataFrame
+    supply_asset_forecast: pd.DataFrame
+    supply_summary: pd.DataFrame
+    supply_conversion_bridge: pd.DataFrame
+    supply_sources: pd.DataFrame
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -203,6 +209,8 @@ def run_model(
     demand_config = config["demand"]
     supply_config = config["supply"]
     secondary_config = config["secondary_supply"]
+    supply_outputs = build_supply_forecast(config, data_dir, years)
+    supply_by_year = supply_outputs.summary.set_index("year")
 
     recent_supply_growth = _recent_supply_growth(seed_global, config)
     primary_growth = (
@@ -220,11 +228,9 @@ def run_model(
     growth_detail_by_region = regional_growth.set_index("region").to_dict("index")
 
     global_rows: list[dict[str, object]] = []
-    primary_refined = float(supply_config["refinery_production_kt"]) * float(
-        supply_config["primary_refined_share"]
-    )
+    primary_refined = float(supply_by_year.loc[base_year, "primary_refined_supply_kt"])
     secondary_refined = float(supply_config["refinery_production_kt"]) - primary_refined
-    mine_supply = float(supply_config["mine_production_kt"])
+    mine_supply = float(supply_by_year.loc[base_year, "mine_supply_kt"])
 
     for year in years:
         secondary_growth = 0.0
@@ -236,8 +242,6 @@ def run_model(
                 [growth_by_region[region] for region in demand_by_region],
                 weights=[demand_by_region[region] for region in demand_by_region],
             )
-            mine_supply *= 1 + primary_growth
-            primary_refined *= 1 + primary_growth
             secondary_growth = (
                 float(secondary_config["demand_link"]) * float(global_demand_growth)
                 + float(secondary_config["collection_growth"])
@@ -249,6 +253,9 @@ def run_model(
             )
             secondary_refined *= 1 + secondary_growth
 
+        supply_row = supply_by_year.loc[year]
+        mine_supply = float(supply_row["mine_supply_kt"])
+        primary_refined = float(supply_row["primary_refined_supply_kt"])
         for region, demand_kt in demand_by_region.items():
             regional_demand_rows.append(
                 {
@@ -294,18 +301,98 @@ def run_model(
                 "refined_supply_kt": refined_supply,
                 "market_balance_kt": balance,
                 "primary_supply_growth": primary_growth,
+                "supply_model_primary_growth": float(supply_row["primary_supply_growth"]),
                 "secondary_supply_growth": secondary_growth,
             }
         )
 
+    forecast = pd.DataFrame(global_rows)
+    forecast["primary_supply_growth"] = forecast["supply_model_primary_growth"]
+    conversion_bridge = _build_supply_conversion_bridge(
+        supply_outputs.summary, forecast, config["scenario_name"]
+    )
+    supply_summary = supply_outputs.summary.merge(
+        forecast[
+            [
+                "scenario",
+                "year",
+                "secondary_refined_supply_kt",
+                "refined_supply_kt",
+                "market_balance_kt",
+            ]
+        ],
+        on=["scenario", "year"],
+        how="left",
+    )
     country_supply = _allocate_mine_supply_by_country(
-        seed_country, pd.DataFrame(global_rows), config["scenario_name"]
+        seed_country, forecast, config["scenario_name"]
     )
     return ModelOutputs(
-        forecast=pd.DataFrame(global_rows),
+        forecast=forecast,
         regional_demand=pd.DataFrame(regional_demand_rows),
         mine_supply_by_country=country_supply,
+        supply_asset_forecast=supply_outputs.asset_forecast,
+        supply_summary=supply_summary,
+        supply_conversion_bridge=conversion_bridge,
+        supply_sources=supply_outputs.sources,
     )
+
+
+def _build_supply_conversion_bridge(
+    supply_summary: pd.DataFrame, forecast: pd.DataFrame, scenario: str
+) -> pd.DataFrame:
+    forecast_by_year = forecast.set_index("year")
+    rows: list[dict[str, object]] = []
+    for item in supply_summary.itertuples(index=False):
+        forecast_row = forecast_by_year.loc[int(item.year)]
+        bridge_steps = [
+            {
+                "step_order": 1,
+                "step": "Risk-adjusted mine supply",
+                "kt": float(item.mine_supply_kt),
+                "note": "Reported operating output plus probability-weighted project and expansion output.",
+            },
+            {
+                "step_order": 2,
+                "step": "Payable / route calibration",
+                "kt": float(item.primary_refined_before_constraints_kt)
+                - float(item.mine_supply_kt),
+                "note": "Calibrates mine copper content to 2024 primary refined output before bottlenecks.",
+            },
+            {
+                "step_order": 3,
+                "step": "Smelter / refinery constraint",
+                "kt": -float(item.smelter_refinery_constraint_kt),
+                "note": "Loss when concentrate availability exceeds assumed processing capacity growth.",
+            },
+            {
+                "step_order": 4,
+                "step": "Blending / maintenance constraint",
+                "kt": -float(item.blending_constraint_kt),
+                "note": "Allowance for concentrate quality; blending; planned conversion downtime.",
+            },
+            {
+                "step_order": 5,
+                "step": "Primary refined supply",
+                "kt": float(item.primary_refined_supply_kt),
+                "note": "Mine-linked refined output after conversion constraints.",
+            },
+            {
+                "step_order": 6,
+                "step": "Secondary refined supply",
+                "kt": float(forecast_row.secondary_refined_supply_kt),
+                "note": "Scrap/recycled supply from the model's secondary-supply rule.",
+            },
+            {
+                "step_order": 7,
+                "step": "Total refined supply",
+                "kt": float(forecast_row.refined_supply_kt),
+                "note": "Primary refined supply plus secondary refined supply used in the Model tab.",
+            },
+        ]
+        for step in bridge_steps:
+            rows.append({"scenario": scenario, "year": int(item.year), **step})
+    return pd.DataFrame(rows)
 
 
 def _allocate_mine_supply_by_country(
@@ -337,8 +424,16 @@ def write_outputs(outputs: ModelOutputs, output_dir: Path, scenario: str) -> lis
         output_dir / f"{scenario}_forecast.csv",
         output_dir / f"{scenario}_regional_demand.csv",
         output_dir / f"{scenario}_mine_supply_by_country.csv",
+        output_dir / f"{scenario}_supply_assets.csv",
+        output_dir / f"{scenario}_supply_summary.csv",
+        output_dir / f"{scenario}_supply_conversion_bridge.csv",
+        output_dir / f"{scenario}_supply_sources.csv",
     ]
     outputs.forecast.to_csv(paths[0], index=False)
     outputs.regional_demand.to_csv(paths[1], index=False)
     outputs.mine_supply_by_country.to_csv(paths[2], index=False)
+    outputs.supply_asset_forecast.to_csv(paths[3], index=False)
+    outputs.supply_summary.to_csv(paths[4], index=False)
+    outputs.supply_conversion_bridge.to_csv(paths[5], index=False)
+    outputs.supply_sources.to_csv(paths[6], index=False)
     return paths

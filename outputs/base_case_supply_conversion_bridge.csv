@@ -1,0 +1,85 @@
+scenario,year,step_order,step,kt,note
+base_case,2024,1,Risk-adjusted mine supply,23000.0,Reported operating output plus probability-weighted project and expansion output.
+base_case,2024,2,Payable / route calibration,-92.0,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2024,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2024,4,Blending / maintenance constraint,-0.0,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2024,5,Primary refined supply,22908.0,Mine-linked refined output after conversion constraints.
+base_case,2024,6,Secondary refined supply,4692.0,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2024,7,Total refined supply,27600.0,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2025,1,Risk-adjusted mine supply,22746.98370416667,Reported operating output plus probability-weighted project and expansion output.
+base_case,2025,2,Payable / route calibration,-90.98793481666507,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2025,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2025,4,Blending / maintenance constraint,-47.376145858275535,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2025,5,Primary refined supply,22608.61962349173,Mine-linked refined output after conversion constraints.
+base_case,2025,6,Secondary refined supply,4800.461476633593,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2025,7,Total refined supply,27409.081100125324,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2026,1,Risk-adjusted mine supply,23091.183544580832,Reported operating output plus probability-weighted project and expansion output.
+base_case,2026,2,Payable / route calibration,-92.36473417832167,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2026,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2026,4,Blending / maintenance constraint,-48.146699621382524,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2026,5,Primary refined supply,22950.672110781128,Mine-linked refined output after conversion constraints.
+base_case,2026,6,Secondary refined supply,4911.913974753876,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2026,7,Total refined supply,27862.586085535004,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2027,1,Risk-adjusted mine supply,23756.296425998928,Reported operating output plus probability-weighted project and expansion output.
+base_case,2027,2,Payable / route calibration,-95.0251857039948,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2027,3,Smelter / refinery constraint,-4.744551962181504,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2027,4,Blending / maintenance constraint,-49.751952730411034,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2027,5,Primary refined supply,23606.77473560234,Mine-linked refined output after conversion constraints.
+base_case,2027,6,Secondary refined supply,5026.446603876508,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2027,7,Total refined supply,28633.22133947885,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2028,1,Risk-adjusted mine supply,24208.36854661873,Reported operating output plus probability-weighted project and expansion output.
+base_case,2028,2,Payable / route calibration,-96.83347418647463,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2028,3,Smelter / refinery constraint,-132.8058692746512,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2028,4,Blending / maintenance constraint,-50.806134672779265,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2028,5,Primary refined supply,23927.923068484823,Mine-linked refined output after conversion constraints.
+base_case,2028,6,Secondary refined supply,5144.151125908088,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2028,7,Total refined supply,29072.07419439291,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2029,1,Risk-adjusted mine supply,24561.52008558532,Reported operating output plus probability-weighted project and expansion output.
+base_case,2029,2,Payable / route calibration,-98.24608034234188,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2029,3,Smelter / refinery constraint,-189.59399561555654,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2029,4,Blending / maintenance constraint,-51.61293134567266,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2029,5,Primary refined supply,24222.06707828175,Mine-linked refined output after conversion constraints.
+base_case,2029,6,Secondary refined supply,5265.122032241479,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2029,7,Total refined supply,29487.189110523228,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2030,1,Risk-adjusted mine supply,24833.94789049703,Reported operating output plus probability-weighted project and expansion output.
+base_case,2030,2,Payable / route calibration,-99.33579156198903,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2030,3,Smelter / refinery constraint,-184.196800648727,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2030,4,Blending / maintenance constraint,-52.204885368555665,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2030,5,Primary refined supply,24498.21041291776,Mine-linked refined output after conversion constraints.
+base_case,2030,6,Secondary refined supply,5389.456623109145,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2030,7,Total refined supply,29887.667036026905,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2031,1,Risk-adjusted mine supply,25014.847664911445,Reported operating output plus probability-weighted project and expansion output.
+base_case,2031,2,Payable / route calibration,-100.05939065964412,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2031,3,Smelter / refinery constraint,-126.92670584730476,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2031,4,Blending / maintenance constraint,-52.61891379151688,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2031,5,Primary refined supply,24735.24265461298,Mine-linked refined output after conversion constraints.
+base_case,2031,6,Secondary refined supply,5517.255089263236,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2031,7,Total refined supply,30252.497743876214,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2032,1,Risk-adjusted mine supply,25162.9619058514,Reported operating output plus probability-weighted project and expansion output.
+base_case,2032,2,Payable / route calibration,-100.65184762340505,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2032,3,Smelter / refinery constraint,-44.60465603191696,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2032,4,Blending / maintenance constraint,-52.950893720280966,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2032,5,Primary refined supply,24964.7545084758,Mine-linked refined output after conversion constraints.
+base_case,2032,6,Secondary refined supply,5648.620596053152,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2032,7,Total refined supply,30613.37510452895,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2033,1,Risk-adjusted mine supply,25311.238028811,Reported operating output plus probability-weighted project and expansion output.
+base_case,2033,2,Payable / route calibration,-101.24495211524481,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2033,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2033,4,Blending / maintenance constraint,-53.283193409970465,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2033,5,Primary refined supply,25156.709883285785,Mine-linked refined output after conversion constraints.
+base_case,2033,6,Secondary refined supply,5783.659369973405,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2033,7,Total refined supply,30940.36925325919,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2034,1,Risk-adjusted mine supply,25391.18282609502,Reported operating output plus probability-weighted project and expansion output.
+base_case,2034,2,Payable / route calibration,-101.56473130438098,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2034,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2034,4,Blending / maintenance constraint,-53.457528775534485,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2034,5,Primary refined supply,25236.160566015104,Mine-linked refined output after conversion constraints.
+base_case,2034,6,Secondary refined supply,5922.480787756696,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2034,7,Total refined supply,31158.6413537718,Primary refined supply plus secondary refined supply used in the Model tab.
+base_case,2035,1,Risk-adjusted mine supply,25458.128091824932,Reported operating output plus probability-weighted project and expansion output.
+base_case,2035,2,Payable / route calibration,-101.83251236729848,Calibrates mine copper content to 2024 primary refined output before bottlenecks.
+base_case,2035,3,Smelter / refinery constraint,-0.0,Loss when concentrate availability exceeds assumed processing capacity growth.
+base_case,2035,4,Blending / maintenance constraint,-53.59927979801065,Allowance for concentrate quality; blending; planned conversion downtime.
+base_case,2035,5,Primary refined supply,25302.696299659623,Mine-linked refined output after conversion constraints.
+base_case,2035,6,Secondary refined supply,6065.197468089357,Scrap/recycled supply from the model's secondary-supply rule.
+base_case,2035,7,Total refined supply,31367.89376774898,Primary refined supply plus secondary refined supply used in the Model tab.

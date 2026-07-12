@@ -130,6 +130,16 @@ def test_run_model_produces_full_forecast():
     )
     assert not outputs.regional_demand.empty
     assert not outputs.mine_supply_by_country.empty
+    assert not outputs.supply_asset_forecast.empty
+    assert not outputs.supply_summary.empty
+    assert not outputs.supply_conversion_bridge.empty
+    assert {"primary_refined_supply_kt", "smelter_refinery_constraint_kt"}.issubset(
+        outputs.supply_summary.columns
+    )
+    assert {
+        "Risk-adjusted mine supply",
+        "Total refined supply",
+    }.issubset(set(outputs.supply_conversion_bridge["step"]))
 
 
 def test_all_dashboard_scenarios_run():

@@ -35,10 +35,14 @@ Outputs are written to `outputs/`:
 - `base_case_forecast.csv`: annual global refined copper balance.
 - `base_case_regional_demand.csv`: annual regional demand paths.
 - `base_case_mine_supply_by_country.csv`: mine-supply allocation by 2024 country share.
+- `base_case_supply_assets.csv`: mine/project-level risk-adjusted supply forecast.
+- `base_case_supply_summary.csv`: annual supply bridge from mine output to primary refined supply.
+- `base_case_supply_conversion_bridge.csv`: selected bridge steps from mine supply to total refined supply.
+- `base_case_supply_sources.csv`: source and assumption notes for the supply assets.
 - `base_case_balance.png`: chart of demand, supply, and balance.
 - `bull_case_*` and `bear_case_*`: higher-tightness and lower-tightness scenario outputs for the dashboard.
 
-The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`. It presents the model as a small market-intelligence workbench: executive market signal, scenario comparison, driver bridge, visual demand/supply breakdowns, formula-level demand and supply growth drivers, physical balance charts, source links, and assumption rationale.
+The static dashboard in `dashboard/` reads those CSV files directly from `outputs/`. It presents the model as a small market-intelligence workbench: executive market signal, scenario comparison, driver bridge, visual demand/supply breakdowns, a dedicated supply tab, formula-level demand and supply growth drivers, physical balance charts, source links, and assumption rationale.
 
 ## Model Structure
 
@@ -74,10 +78,19 @@ Quarterly data would be a better way to test cyclical sensitivity, but a reprodu
 
 Supply is split into primary and secondary refined copper:
 
-- Primary supply grows with recent USGS mine/refinery growth, pipeline assumptions, and disruption assumptions.
+- Primary supply now comes from a mine-level supply module. It starts from USGS 2024 world mine production, adds named operating mines and projects, applies ramp-up curves, project probabilities, planned maintenance allowances, disruption losses, and a residual rest-of-world supply bucket.
+- Mine supply is then converted into primary refined supply through a separate bridge. The bridge distinguishes mine copper content from refined copper output and applies a calibration factor plus smelter/refinery, blending, and maintenance constraints.
 - Secondary supply grows with demand and collection-rate assumptions.
 - Mine supply is also allocated by country using USGS 2024 mine-production shares.
 - The primary/secondary refined split starts from ICSG's 2024 refined-production mix. In the base case it is 83% primary and 17% secondary, grouping SX-EW refined output with primary supply.
+
+The mine-level formula used where grade and recovery are available is:
+
+```text
+contained copper kt = ore processed Mt * copper grade % * recovery % * 10
+```
+
+For many mines, the model uses reported production directly because current ore processed, grade, and recovery are not disclosed in one consistent public source. In those cases, grade and recovery fields are shown as modelling assumptions and the source/assumption note says so.
 
 ## Configuration
 
@@ -112,8 +125,11 @@ Seed tables in `data/seed/` are manually transcribed from:
   `https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf`
 - ICSG World Copper Factbook 2025, Annex "World Copper Production and Refined Copper Usage, 1960-2024":
   `https://icsg.org/copper-factbook/`
+- ICSG project-pipeline chart and mine/smelter/refinery context from the World Copper Factbook 2025:
+  `https://icsg.org/copper-factbook/`
 - ICSG publications and online statistical database context for monthly/quarterly copper data availability:
   `https://icsg.org/`
+- Company/project public pages and annual-report context for named mine/project assumptions, linked row-by-row in `data/seed/global_copper_supply_assets.csv`.
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
 The global seed combines MCS 2025 history for 2023 with the MCS 2026 2024 update. The 2024 refined-supply baseline now uses the USGS MCS 2026 world refinery production figure of 27,600 kt. The country supply seed remains based on the transcribed MCS 2025 country table.
@@ -138,3 +154,4 @@ python3 -m pytest
 - Public machine-readable global copper demand data is limited. The model sets 2024 refined demand from ICSG's 27.4 Mt refined-usage estimate and then projects forward from public macro drivers.
 - Industry demand uses a real industry-output proxy: real GDP multiplied by World Bank industry value added as a percentage of GDP.
 - The model does not estimate inventory or price. It only reports the annual refined copper surplus or deficit.
+- The mine-level supply module is intentionally transparent rather than definitive. It uses public data, explicit assumptions, and probability weighting. A professional version should replace the seed CSV with paid mine-by-mine datasets, current TC/RC data, smelter maintenance schedules, concentrate quality assays, and regional trade-flow data.

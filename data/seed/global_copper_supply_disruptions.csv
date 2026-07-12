@@ -1,0 +1,10 @@
+asset,year,impact_kt,cause,source_name,source_url,assumption_note
+Grasberg,2025,200,September 2025 fatal mud-rush incident,Freeport/press reports,https://www.fcx.com/operations/indonesia,"Q4 2025 copper sales expected to be minimal versus prior guidance; kt impact is converted from roughly 445 million lb prior expectation."
+Grasberg,2026,250,Delayed restart and rebuild risk after mud-rush incident,Freeport/press reports,https://www.fcx.com/operations/indonesia,"Model assumption based on public statements that 2026 output may be materially below pre-incident expectations."
+Codelco,2025,37,El Teniente tunnel collapse and safety shutdown,Codelco/press reports,https://www.codelco.com/,"Model uses public commentary that El Teniente output was reduced versus prior plan after the July 2025 collapse."
+Kamoa-Kakula,2025,50,Power and water disruption risk,Ivanhoe Mines updates,https://ivanhoemines.com/projects/kamoa-kakula-project/,"Model assumption for 2025 disruption risk because public guidance revisions do not isolate a clean copper kt loss."
+Cobre Panama,2024,330,Concession ruling and mine suspension,First Quantum Cobre Panama,https://www.first-quantum.com/English/our-operations/default.aspx,"Lost market availability relative to pre-shutdown annual run-rate."
+Cobre Panama,2025,330,Concession ruling and mine suspension,First Quantum Cobre Panama,https://www.first-quantum.com/English/our-operations/default.aspx,"Assumes the suspended mine remains unavailable for the full year."
+Cobre Panama,2026,250,Concession ruling and mine suspension,First Quantum Cobre Panama,https://www.first-quantum.com/English/our-operations/default.aspx,"Assumes partial restart risk only after political settlement; scenario factors adjust this row."
+Las Bambas,2025,25,Community blockade and logistics risk,MMG Las Bambas,https://www.mmg.com/our-business/las-bambas/,"Recurring Peru logistics risk modelled as a small expected loss rather than a named confirmed outage."
+SCCO Peru,2025,15,Protest and water/logistics risk,Southern Copper operations,https://www.southerncoppercorp.com/,"Expected disruption allowance informed by prior Cuajone-style disruption risk."

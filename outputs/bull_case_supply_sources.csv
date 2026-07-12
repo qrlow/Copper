@@ -1,0 +1,38 @@
+asset,country,source_name,source_url,assumption_note
+Codelco,Chile,Codelco annual reporting,https://www.codelco.com/,Production seeded from public reported Codelco copper output; grade and recovery are broad model assumptions because current mine-by-mine values are not consistently disclosed.
+Escondida,Chile,BHP Escondida operations,https://www.bhp.com/what-we-do/global-locations/chile/escondida,Reported production basis; long-run decline reflects mature grade risk partly offset by debottlenecking.
+Grasberg,Indonesia,Freeport Indonesia operations,https://www.fcx.com/operations/indonesia,Gold-rich by-product copper mine complex; forecast includes explicit 2025-2026 disruption rows for the September 2025 mud-rush incident.
+Tenke,DRC,CMOC copper-cobalt operations,https://en.cmoc.com/html/Business/CopperCobalt/,High-grade DRC copper-cobalt operation; expansion path is risk adjusted through DRC logistics and policy risk.
+Kisanfu,DRC,CMOC copper-cobalt operations,https://en.cmoc.com/html/Business/CopperCobalt/,KFM expansion treated as probable but risk adjusted because public asset-level timing remains uncertain.
+Zijin Tibet,China,Zijin Mining operations,https://www.zijinmining.com/,Tibet copper growth treated as brownfield expansion; infrastructure and altitude risk are explicitly flagged.
+Collahuasi,Chile,Anglo American Collahuasi,https://www.angloamerican.com/products/copper/collahuasi,Operating mine with expansion option shown separately in the ICSG project pipeline.
+Buenavista,Mexico,Southern Copper operations,https://www.southerncoppercorp.com/,Mature operating mine; lower 2030 output reflects depletion and conservative achievable-production risk.
+Antamina,Peru,Antamina operation,https://www.antamina.com/,Polymetallic by-product copper mine; output can be affected by zinc/copper ore sequencing.
+Cerro Verde,Peru,Freeport South America operations,https://www.fcx.com/operations/south-america,Reported production basis with modest mature-mine decline.
+SCCO Peru,Peru,Southern Copper operations,https://www.southerncoppercorp.com/,Peru operations group rather than one mine; includes Cuajone and Toquepala style operating risk.
+Las Bambas,Peru,MMG Las Bambas,https://www.mmg.com/our-business/las-bambas/,Operating mine with high logistics and community-blockade risk.
+Kamoa-Kakula,DRC,Ivanhoe Kamoa-Kakula,https://ivanhoemines.com/projects/kamoa-kakula-project/,High-grade operation; power and water disruption risks are modelled separately.
+Norilsk,Russia,Nornickel Norilsk division,https://www.nornickel.com/business/assets/norilsk-division/,By-product copper from nickel-PGM system; geopolitical and logistics risk flagged.
+Los Pelambres,Chile,Antofagasta Los Pelambres,https://www.antofagasta.co.uk/operations/mining-division/los-pelambres/,Reported production basis; water and grade pressure are the main operating risks.
+Quellaveco,Peru,Anglo American Quellaveco,https://www.angloamerican.com/products/copper/quellaveco,Newer operating mine; 2030 output assumes normalization below early ramp years.
+Oyu Tolgoi,Mongolia,Rio Tinto Oyu Tolgoi,https://www.riotinto.com/en/operations/mongolia/oyu-tolgoi,Underground ramp-up asset; infrastructure and technical execution risk are explicitly flagged.
+Quebrada Blanca,Chile,Teck Quebrada Blanca,https://www.teck.com/operations/chile/quebrada-blanca/,QB2 ramp-up and debottlenecking treated as operating ramp rather than greenfield project.
+Lumwana,Zambia,Barrick Lumwana,https://www.barrick.com/English/operations/lumwana/default.aspx,Super-pit expansion treated as probable with infrastructure and execution risk.
+Kansanshi - conc,Zambia,First Quantum operations,https://www.first-quantum.com/English/our-operations/default.aspx,Concentrate line from Kansanshi; smelter routing constraints matter for refined output.
+Tia Maria,Peru,Southern Copper projects,https://www.southerncoppercorp.com/ENG/intope/Pages/PGIntOperationProjects.aspx,Project capacity from public company context and ICSG project chart; probability discounted heavily for social and permitting risk.
+Cobre Panama,Panama,First Quantum Cobre Panama,https://www.first-quantum.com/English/our-operations/default.aspx,Suspended after Panama concession ruling; restart probability is scenario-sensitive.
+Malmyzh,Russia,Russian Copper Company Malmyzh,https://www.russian-copper.ru/en/projects/malmyzh/,Project capacity aligned to public project descriptions and ICSG bubble size; geopolitical and infrastructure risk discounted.
+Cascabel,Ecuador,SolGold Cascabel,https://www.solgold.com.au/projects/cascabel/,Large Ecuador project; probability discount reflects permitting; financing; and development timing risk.
+Reko Diq,Pakistan,Barrick Reko Diq,https://www.barrick.com/English/operations/reko-diq/default.aspx,Phase 1 project; model uses probability-weighted ramp before full nameplate.
+Resolution,United States,Resolution Copper,https://resolutioncopper.com/,ICSG chart shows post-2028 potential; dashboard probability is low because permitting remains highly uncertain.
+Tampakan,Philippines,ICSG project pipeline,https://icsg.org/copper-factbook/,Capacity seeded from ICSG project chart; probability discounted for permitting and social opposition.
+El Abra Expansion,Chile,Freeport South America operations,https://www.fcx.com/operations/south-america,ICSG chart lists El Abra expansion after 2028; model discounts timing.
+La Granja,Peru,Rio Tinto La Granja JV,https://www.riotinto.com/en/news/releases/2023/rio-tinto-and-first-quantum-complete-la-granja-joint-venture,Project capacity seeded from ICSG chart; probability reflects early-stage development.
+Frieda River,Papua New Guinea,PanAust Frieda River,https://www.panaust.com.au/our-business/frieda-river-project,Infrastructure and permitting risk are high; probability-weighted contribution is small before 2035.
+Pebble,United States,Pebble Partnership,https://pebblepartnership.com/,Very low probability because of permitting opposition and regulatory risk.
+Copper World,United States,Hudbay Copper World,https://hudbayminerals.com/operations/united-states/copper-world/,Project probability reflects state/federal permitting uncertainty.
+Centinela Expansion,Chile,Antofagasta Centinela,https://www.antofagasta.co.uk/operations/mining-division/centinela/,Expansion treated as relatively high probability after sanctioning progress.
+Zafranal,Peru,Teck Zafranal,https://www.teck.com/operations/peru/zafranal/,Project capacity anchored to public project materials and ICSG chart; probability discounted for execution.
+Galore Creek,Canada,Galore Creek project,https://www.gcmc.ca/,Remote infrastructure-heavy project; low probability before 2035.
+Los Azules,Argentina,McEwen Copper Los Azules,https://mcewencopper.com/projects/los-azules/,Probability discount reflects financing; permitting; infrastructure; and Argentina macro risk.
+Wafi-Golpu,Papua New Guinea,Wafi-Golpu project,https://www.wafi-golpu.com/,Large PNG project with material permitting and infrastructure risk.
