@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-12-supply-model-gdp-beta-workbook-story-shares";
+const DATA_VERSION = "2026-07-12-supply-flow-check-gdp-beta-workbook-story-shares";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -706,6 +706,10 @@ function renderDemandSupplyBreakdown(forecastRow, regionalRows) {
   document.getElementById("supplyBreakdownBadge").textContent = `${formatKt(
     forecastRow.refined_supply_kt,
   )} kt`;
+  document.getElementById("modelSupplyBridgeNote").textContent =
+    `This total refined supply is ${formatKt(forecastRow.primary_refined_supply_kt)} kt primary refined from the Supply tab plus ${formatKt(
+      forecastRow.secondary_refined_supply_kt,
+    )} kt secondary refined from the scrap/recycling rule.`;
 
   renderStackedBreakdown(
     "demandBreakdownStack",
