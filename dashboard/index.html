@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-12-supply-equation-gdp-beta-workbook-story-shares" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-reference-model-copy" />
   </head>
   <body>
     <main class="app-shell">
@@ -29,7 +29,7 @@
       <nav class="app-tabs" aria-label="Dashboard views" role="tablist">
         <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="supplyTab">Supply</button>
-        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Workbook Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Reference Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">GDP-Copper Usage Relationship</button>
       </nav>
 
@@ -333,10 +333,10 @@
             <a href="../data/seed/global_copper_supply_disruptions.csv" target="_blank" rel="noreferrer">Supply disruption seed CSV</a>
             <a href="../outputs/bull_case_forecast.csv" target="_blank" rel="noreferrer">Bull forecast CSV</a>
             <a href="../outputs/bear_case_forecast.csv" target="_blank" rel="noreferrer">Bear forecast CSV</a>
-            <a href="../outputs/workbook_market_balance.csv" target="_blank" rel="noreferrer">Workbook market balance CSV</a>
-            <a href="../outputs/workbook_demand_components.csv" target="_blank" rel="noreferrer">Workbook demand components CSV</a>
-            <a href="../outputs/workbook_mine_supply_country.csv" target="_blank" rel="noreferrer">Workbook mine supply by country CSV</a>
-            <a href="../outputs/workbook_major_mines.csv" target="_blank" rel="noreferrer">Workbook major mines CSV</a>
+            <a href="../outputs/workbook_market_balance.csv" target="_blank" rel="noreferrer">Reference model market balance CSV</a>
+            <a href="../outputs/workbook_demand_components.csv" target="_blank" rel="noreferrer">Reference model demand components CSV</a>
+            <a href="../outputs/workbook_mine_supply_country.csv" target="_blank" rel="noreferrer">Reference model mine supply by country CSV</a>
+            <a href="../outputs/workbook_major_mines.csv" target="_blank" rel="noreferrer">Reference model major mines CSV</a>
           </article>
         </div>
       </section>
@@ -502,12 +502,12 @@
       <section id="workbookTab" class="tab-panel is-hidden" aria-labelledby="workbookHeading">
         <section class="panel workbook-hero">
           <div class="panel-header">
-            <h2 id="workbookHeading">Workbook Market Balance</h2>
+            <h2 id="workbookHeading">Reference Model Market Balance</h2>
             <span id="workbookDataBadge" class="badge">--</span>
           </div>
-          <p class="workbook-lede">Yearly copper supply, demand, price, scrap, and electrification rows extracted from the workbook's <code>Market Balance</code> sheet.</p>
+          <p class="workbook-lede">Yearly copper supply, demand, price, scrap, and electrification rows extracted from the reference model's <code>Market Balance</code> sheet.</p>
           <p id="workbookNarrativeLead" class="workbook-narrative-lead">--</p>
-          <div class="workbook-metrics" aria-label="Workbook summary metrics">
+          <div class="workbook-metrics" aria-label="Reference model summary metrics">
             <article class="metric compact">
               <span>2030 Balance</span>
               <strong id="workbookFinalBalance">--</strong>
@@ -526,14 +526,14 @@
           </div>
         </section>
 
-        <section class="workbook-grid" aria-label="Workbook market-balance visuals">
+        <section class="workbook-grid" aria-label="Reference model market-balance visuals">
           <article class="panel wide workbook-story-panel">
             <div class="panel-header">
-              <h2>Workbook Narrative</h2>
+              <h2>Reference Model Narrative</h2>
               <span class="badge">2024 to 2030</span>
             </div>
-            <div id="workbookNarrativeCards" class="narrative-grid" aria-label="Workbook narrative metrics"></div>
-            <div id="workbookBalanceBridge" class="bridge-list" aria-label="Workbook balance bridge"></div>
+            <div id="workbookNarrativeCards" class="narrative-grid" aria-label="Reference model narrative metrics"></div>
+            <div id="workbookBalanceBridge" class="bridge-list" aria-label="Reference model balance bridge"></div>
           </article>
 
           <article class="panel wide">
@@ -541,7 +541,7 @@
               <h2>Refined Market Balance</h2>
               <span class="badge">'000 tonnes</span>
             </div>
-            <div id="workbookBalanceChart" class="chart large" role="img" aria-label="Workbook refined production, refined consumption, and market balance"></div>
+            <div id="workbookBalanceChart" class="chart large" role="img" aria-label="Reference model refined production, refined consumption, and market balance"></div>
           </article>
 
           <article class="panel">
@@ -549,7 +549,7 @@
               <h2>Demand Mix</h2>
               <span id="workbookDemandMixBadge" class="badge">--</span>
             </div>
-            <div id="workbookDemandMixStack" class="stacked-breakdown" role="img" aria-label="Workbook demand components"></div>
+            <div id="workbookDemandMixStack" class="stacked-breakdown" role="img" aria-label="Reference model demand components"></div>
             <div id="workbookDemandMixRows" class="breakdown-list"></div>
           </article>
 
@@ -558,7 +558,7 @@
               <h2>Copper Price Path</h2>
               <span class="badge">$/t</span>
             </div>
-            <div id="workbookPriceChart" class="chart compact-chart" role="img" aria-label="Workbook copper price path"></div>
+            <div id="workbookPriceChart" class="chart compact-chart" role="img" aria-label="Reference model copper price path"></div>
           </article>
 
           <article class="panel wide">
@@ -566,7 +566,7 @@
               <h2>Demand Component Trends</h2>
               <span class="badge">index, 2024 = 100</span>
             </div>
-            <div id="workbookComponentTrendChart" class="chart component-trend-chart" role="img" aria-label="Workbook demand component trend index"></div>
+            <div id="workbookComponentTrendChart" class="chart component-trend-chart" role="img" aria-label="Reference model demand component trend index"></div>
             <div class="compact-table-wrap workbook-demand-movers">
               <table class="compact-table workbook-table">
                 <thead>
@@ -597,7 +597,7 @@
               <h2>Scrap System</h2>
               <span id="workbookScrapBadge" class="badge">--</span>
             </div>
-            <div id="workbookScrapStack" class="stacked-breakdown" role="img" aria-label="Workbook scrap system components"></div>
+            <div id="workbookScrapStack" class="stacked-breakdown" role="img" aria-label="Reference model scrap system components"></div>
             <div id="workbookScrapRows" class="breakdown-list"></div>
           </article>
 
@@ -606,7 +606,7 @@
               <h2>Mine Supply By Country</h2>
               <span class="badge">2030 rank</span>
             </div>
-            <div id="workbookCountrySupplyChart" class="workbook-country-bars" role="img" aria-label="Workbook mine supply by country ranking"></div>
+            <div id="workbookCountrySupplyChart" class="workbook-country-bars" role="img" aria-label="Reference model mine supply by country ranking"></div>
           </article>
 
           <article class="panel">
@@ -631,7 +631,7 @@
 
           <article class="panel wide">
             <div class="panel-header">
-              <h2>Workbook Rows</h2>
+              <h2>Reference Model Rows</h2>
               <span class="badge">latest six years</span>
             </div>
             <div class="compact-table-wrap">
@@ -795,6 +795,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-12-supply-equation-gdp-beta-workbook-story-shares"></script>
+    <script src="./app.js?v=2026-07-13-reference-model-copy"></script>
   </body>
 </html>

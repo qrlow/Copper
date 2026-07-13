@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-12-supply-equation-gdp-beta-workbook-story-shares";
+const DATA_VERSION = "2026-07-13-reference-model-copy";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -1724,7 +1724,7 @@ function renderWorkbookNarrative(workbook) {
       : 0;
 
   document.getElementById("workbookNarrativeLead").textContent =
-    `The workbook tells a tightening story: refined copper moves from a ${formatBalance(
+    `The reference model tells a tightening story: refined copper moves from a ${formatBalance(
       start.market_balance_kt,
     )} in 2024 to a ${formatBalance(end.market_balance_kt)} in 2030, while the price path rises to ${formatUsd(
       end.copper_price_usd_per_t,
@@ -1748,7 +1748,7 @@ function renderWorkbookNarrative(workbook) {
     {
       label: "Supply risk is concentrated",
       value: `${formatPct(topThreeShare, 0)}`,
-      detail: `${topThree.map((row) => row.country).join(", ")} account for this share of 2030 mine supply in the workbook.`,
+      detail: `${topThree.map((row) => row.country).join(", ")} account for this share of 2030 mine supply in the reference model.`,
       tone: "neutral",
     },
     {
@@ -2000,7 +2000,7 @@ function renderWorkbookTab(workbook) {
   const balanceMetric = document.getElementById("workbookFinalBalance");
 
   document.getElementById("workbookDataBadge").textContent =
-    `${Math.round(first.year)}-${Math.round(last.year)} from workbook`;
+    `${Math.round(first.year)}-${Math.round(last.year)} from reference model`;
   balanceMetric.textContent = formatBalance(last.market_balance_kt);
   balanceMetric.className = balanceClass(last.market_balance_kt);
   document.getElementById("workbookFinalPrice").textContent = formatUsd(
