@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-13-icsg-anchor-calibration" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-demand-driver-region-toggle" />
   </head>
   <body>
     <main class="app-shell">
@@ -163,11 +163,17 @@
       <section class="factor-grid" aria-label="Demand and supply factor breakdown">
         <article class="panel factor-panel">
           <div class="panel-header">
-            <h2>Demand Growth Drivers</h2>
+            <div class="panel-title-stack">
+              <h2>Demand Growth Drivers</h2>
+              <label class="inline-select-control" for="demandFactorRegionSelect">
+                <span>Scope</span>
+                <select id="demandFactorRegionSelect" aria-label="Demand growth driver scope"></select>
+              </label>
+            </div>
             <span id="demandFactorBadge" class="badge">--</span>
           </div>
           <div id="demandFactorRows" class="factor-list"></div>
-          <p class="panel-note">Weighted annual demand growth is built from fixed 10-year historical CAGRs for industry activity, GDP per capita, and population, then adjusted for a smaller energy-transition bonus, China property downturn drag, substitution drag, and scenario shock.</p>
+          <p class="panel-note">Use the scope selector to switch between world-weighted demand growth and individual regions. Growth is built from fixed 10-year historical CAGRs for industry activity, GDP per capita, and population, then adjusted for energy transition, China property downturn, substitution, and scenario shock.</p>
         </article>
 
         <article class="panel factor-panel">
@@ -951,6 +957,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-13-icsg-anchor-calibration"></script>
+    <script src="./app.js?v=2026-07-13-demand-driver-region-toggle"></script>
   </body>
 </html>

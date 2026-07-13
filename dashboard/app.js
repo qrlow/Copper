@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-icsg-anchor-calibration";
+const DATA_VERSION = "2026-07-13-demand-driver-region-toggle";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -787,38 +787,92 @@ function renderFactorRows(containerId, rows) {
     .join("");
 }
 
-function renderFactorBreakdowns(forecastRow, regionalRows, config) {
+function renderDemandFactorScopeOptions(regionalRows, selectedScope) {
+  const select = document.getElementById("demandFactorRegionSelect");
+  const scopes = ["World total", ...regionalRows.map((row) => row.region)];
+  const currentScope = scopes.includes(selectedScope) ? selectedScope : "World total";
+  select.innerHTML = scopes
+    .map((scope) => `<option value="${scope}">${scope}</option>`)
+    .join("");
+  select.value = currentScope;
+  return currentScope;
+}
+
+function demandDriverValue(regionalRows, selectedScope, field) {
+  if (selectedScope === "World total") {
+    return weightedAverage(regionalRows, (row) => row[field]);
+  }
+  const regionRow = regionalRows.find((row) => row.region === selectedScope);
+  return Number(regionRow?.[field] || 0);
+}
+
+function demandDriverDetail(config, selectedScope, worldDetail, regionDetail) {
+  return selectedScope === "World total" ? worldDetail : regionDetail(config.demand.regions[selectedScope] || {});
+}
+
+function renderFactorBreakdowns(forecastRow, regionalRows, config, selectedDemandScope) {
+  const currentDemandScope = renderDemandFactorScopeOptions(regionalRows, selectedDemandScope);
   const weightedDemandGrowth = weightedAverage(regionalRows, (row) => row.growth_rate);
+  const selectedDemandGrowth = demandDriverValue(
+    regionalRows,
+    currentDemandScope,
+    "growth_rate",
+  );
   const demandRows = [
     {
       label: "Industry activity",
-      detail: `industry weight ${formatPct(config.demand.driver_weights.industry_value_added, 0)}`,
-      value: weightedAverage(regionalRows, (row) => row.industry_contribution),
+      detail: `industry weight ${formatPct(
+        config.demand.driver_weights.industry_value_added,
+        0,
+      )}`,
+      value: demandDriverValue(regionalRows, currentDemandScope, "industry_contribution"),
     },
     {
       label: "GDP per capita",
       detail: `income weight ${formatPct(config.demand.driver_weights.gdp_per_capita, 0)}`,
-      value: weightedAverage(regionalRows, (row) => row.gdp_per_capita_contribution),
+      value: demandDriverValue(
+        regionalRows,
+        currentDemandScope,
+        "gdp_per_capita_contribution",
+      ),
     },
     {
       label: "Population",
       detail: `population weight ${formatPct(config.demand.driver_weights.population, 0)}`,
-      value: weightedAverage(regionalRows, (row) => row.population_contribution),
+      value: demandDriverValue(regionalRows, currentDemandScope, "population_contribution"),
     },
     {
       label: "Energy-transition bonus",
-      detail: "weighted regional transition assumption",
-      value: weightedAverage(regionalRows, (row) => row.transition_bonus),
+      detail: demandDriverDetail(
+        config,
+        currentDemandScope,
+        "weighted regional transition assumption",
+        (region) => `${currentDemandScope} transition assumption ${formatSignedPct(region.transition_growth_bonus || 0)}`,
+      ),
+      value: demandDriverValue(regionalRows, currentDemandScope, "transition_bonus"),
     },
     {
       label: "China property downturn",
-      detail: "phased regional drag, weighted by demand share",
-      value: weightedAverage(regionalRows, (row) => row.property_downturn_drag),
+      detail: demandDriverDetail(
+        config,
+        currentDemandScope,
+        "weighted phased China property drag",
+        (region) =>
+          Number(region.property_downturn_drag || 0) === 0
+            ? "no explicit property downturn drag"
+            : `phased to ${formatSignedPct(region.property_downturn_drag)} by ${region.property_downturn_end_year}`,
+      ),
+      value: demandDriverValue(regionalRows, currentDemandScope, "property_downturn_drag"),
     },
     {
       label: "Substitution / intensity drag",
-      detail: "material substitution and copper-thrifting assumption",
-      value: weightedAverage(regionalRows, (row) => row.substitution_drag),
+      detail: demandDriverDetail(
+        config,
+        currentDemandScope,
+        "weighted material substitution and copper-thrifting assumption",
+        (region) => `${currentDemandScope} substitution assumption ${formatSignedPct(region.substitution_drag || 0)}`,
+      ),
+      value: demandDriverValue(regionalRows, currentDemandScope, "substitution_drag"),
     },
     {
       label: "Scenario shock",
@@ -826,7 +880,7 @@ function renderFactorBreakdowns(forecastRow, regionalRows, config) {
       value: Number(config.demand.scenario_growth_shock),
     },
   ];
-  const clipAdjustment = weightedAverage(regionalRows, (row) => row.clip_adjustment);
+  const clipAdjustment = demandDriverValue(regionalRows, currentDemandScope, "clip_adjustment");
   if (Math.abs(clipAdjustment) > 0.0001) {
     demandRows.push({
       label: "Growth cap/floor adjustment",
@@ -885,8 +939,8 @@ function renderFactorBreakdowns(forecastRow, regionalRows, config) {
   }
 
   document.getElementById("demandFactorBadge").textContent = `${formatSignedPct(
-    weightedDemandGrowth,
-  )} annual`;
+    selectedDemandGrowth,
+  )} ${currentDemandScope}`;
   document.getElementById("supplyFactorBadge").textContent =
     `primary ${formatSignedPct(forecastRow.primary_supply_growth)}, secondary ${formatSignedPct(
       clip(
@@ -2521,7 +2575,12 @@ function render(state) {
   renderScenarioExplanation(state);
   updateMetrics(selectedForecast);
   renderDemandSupplyBreakdown(selectedForecast, selectedRegional);
-  renderFactorBreakdowns(selectedForecast, selectedRegional, scenario.config);
+  renderFactorBreakdowns(
+    selectedForecast,
+    selectedRegional,
+    scenario.config,
+    state.selectedDemandScope,
+  );
   renderBalanceChart(forecast, year);
   renderSupplyMix(selectedForecast);
   renderRegionalDemand(selectedRegional);
@@ -2640,10 +2699,16 @@ async function init() {
       regional: icsgRegional,
     },
     selectedScenarioId: "base_case",
+    selectedDemandScope: "World total",
   };
   const scenarioSelect = document.getElementById("scenarioSelect");
   scenarioSelect.addEventListener("change", () => {
     state.selectedScenarioId = scenarioSelect.value;
+    render(state);
+  });
+  const demandFactorRegionSelect = document.getElementById("demandFactorRegionSelect");
+  demandFactorRegionSelect.addEventListener("change", () => {
+    state.selectedDemandScope = demandFactorRegionSelect.value;
     render(state);
   });
   const yearRange = document.getElementById("yearRange");
