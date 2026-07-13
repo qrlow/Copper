@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-13-refined-supply-wording" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-supply-driver-disclosure" />
   </head>
   <body>
     <main class="app-shell">
@@ -391,6 +391,25 @@
               <code>achievable mine supply = gross output - maintenance - disruptions - project probability discount</code>
               <code>mine supply is mined copper content, not refined output</code>
               <code>total refined supply = primary refined after conversion constraints + secondary refined</code>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>What Drives The Supply Output</h2>
+              <span class="badge">used vs shown</span>
+            </div>
+            <p class="panel-note">This separates fields that directly change the modelled supply output from fields that are displayed for context or audit only.</p>
+            <div id="supplyDriverCards" class="supply-driver-grid" aria-label="Supply output driver summary"></div>
+            <div class="supply-driver-columns">
+              <div>
+                <h3>Used In The Forecast</h3>
+                <ul id="supplyUsedList" class="evidence-list"></ul>
+              </div>
+              <div>
+                <h3>Shown, Not Directly Used</h3>
+                <ul id="supplyNotUsedList" class="evidence-list"></ul>
+              </div>
             </div>
           </article>
 
@@ -958,6 +977,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-13-refined-supply-wording"></script>
+    <script src="./app.js?v=2026-07-13-supply-driver-disclosure"></script>
   </body>
 </html>
