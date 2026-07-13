@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-fixed-demand-driver-weights";
+const DATA_VERSION = "2026-07-13-refined-supply-wording";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -679,9 +679,13 @@ function renderSupplyTab(state, year) {
     Number(summaryRow.smelter_refinery_constraint_kt) + Number(summaryRow.blending_constraint_kt),
   )} kt`;
   document.getElementById("supplyModelLink").textContent =
-    `The Model tab uses ${formatKt(summaryRow.primary_refined_supply_kt)} kt primary refined supply plus ${formatKt(
+    `The Model tab's refined supply is ${formatKt(
+      summaryRow.primary_refined_supply_kt + summaryRow.secondary_refined_supply_kt,
+    )} kt: ${formatKt(summaryRow.primary_refined_supply_kt)} kt primary refined supply plus ${formatKt(
       summaryRow.secondary_refined_supply_kt,
-    )} kt secondary refined supply in ${year}.`;
+    )} kt secondary refined supply in ${year}. This is separate from ${formatKt(
+      summaryRow.mine_supply_kt,
+    )} kt mine supply, which is upstream mined copper content, not refined copper output.`;
 
   renderSupplyMethodSummary(summaryRow);
   renderSupplyBridge(scenario.supplyBridge, year);
@@ -737,7 +741,7 @@ function renderDemandSupplyBreakdown(forecastRow, regionalRows) {
       forecastRow.primary_refined_supply_kt,
     )} kt primary refined supply + ${formatKt(
       forecastRow.secondary_refined_supply_kt,
-    )} kt secondary refined supply. Primary refined comes from the Supply tab; secondary refined comes from the scrap/recycling rule.`;
+    )} kt secondary refined supply. Mine production is shown separately in the Supply tab as upstream mined copper content; it is not added directly to refined supply.`;
 
   renderStackedBreakdown(
     "demandBreakdownStack",

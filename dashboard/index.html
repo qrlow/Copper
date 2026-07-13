@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-13-fixed-demand-driver-weights" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-refined-supply-wording" />
   </head>
   <body>
     <main class="app-shell">
@@ -358,18 +358,18 @@
             <h2 id="supplyHeading">Supply</h2>
             <span id="supplyTabBadge" class="badge">--</span>
           </div>
-          <p class="supply-lede">This tab builds the supply side from mine-level production, project ramp-ups, disruption allowances, project probabilities, and a separate mine-to-refined conversion bridge. Mine supply is not treated as refined supply.</p>
+          <p class="supply-lede">This tab builds upstream mine supply and then converts it into primary refined supply. Mine supply is mined copper content; the Model tab's refined supply is primary refined supply plus secondary refined supply.</p>
           <p id="supplyModelLink" class="workbook-narrative-lead">--</p>
           <div class="workbook-metrics" aria-label="Supply summary metrics">
             <article class="metric compact">
               <span>Mine Supply</span>
               <strong id="supplyMineMetric">--</strong>
-              <small>risk-adjusted copper content</small>
+              <small>upstream mined copper content</small>
             </article>
             <article class="metric compact">
               <span>Primary Refined</span>
               <strong id="supplyPrimaryMetric">--</strong>
-              <small>linked into Model tab</small>
+              <small>one part of refined supply</small>
             </article>
             <article class="metric compact">
               <span>Conversion Constraint</span>
@@ -389,7 +389,8 @@
             <div class="formula-strip">
               <code>contained copper kt = ore processed Mt * grade % * recovery % * 10</code>
               <code>achievable mine supply = gross output - maintenance - disruptions - project probability discount</code>
-              <code>refined supply = primary refined after conversion constraints + secondary refined</code>
+              <code>mine supply is mined copper content, not refined output</code>
+              <code>total refined supply = primary refined after conversion constraints + secondary refined</code>
             </div>
           </article>
 
@@ -957,6 +958,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-13-fixed-demand-driver-weights"></script>
+    <script src="./app.js?v=2026-07-13-refined-supply-wording"></script>
   </body>
 </html>
