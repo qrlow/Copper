@@ -51,6 +51,14 @@ def _clip(value: float, lower: float, upper: float) -> float:
     return float(min(max(value, lower), upper))
 
 
+def _linear_phase(year: int, start_year: int, end_year: int) -> float:
+    if year < start_year:
+        return 0.0
+    if year >= end_year:
+        return 1.0
+    return float((year - start_year + 1) / max(end_year - start_year + 1, 1))
+
+
 def _pivot_macro(macro: pd.DataFrame) -> pd.DataFrame:
     pivot = macro.pivot_table(
         index=["country_code", "year"],
@@ -120,17 +128,65 @@ def _macro_growth_for_code(
     }
 
 
+def _demand_growth_components(
+    demand_config: dict[str, Any],
+    region_config: dict[str, Any],
+    macro_growth: dict[str, float],
+    year: int,
+) -> dict[str, float]:
+    weights = demand_config["driver_weights"]
+    industry_contribution = float(weights["industry_value_added"]) * macro_growth["industry"]
+    gdp_per_capita_contribution = (
+        float(weights["gdp_per_capita"]) * macro_growth["gdp_per_capita"]
+    )
+    population_contribution = float(weights["population"]) * macro_growth["population"]
+    transition_bonus = float(region_config.get("transition_growth_bonus", 0.0))
+    scenario_shock = float(demand_config["scenario_growth_shock"])
+
+    property_drag = float(region_config.get("property_downturn_drag", 0.0)) * _linear_phase(
+        year,
+        int(region_config.get("property_downturn_start_year", year)),
+        int(region_config.get("property_downturn_end_year", year)),
+    )
+    substitution_drag = float(
+        region_config.get("substitution_drag", demand_config.get("substitution_drag", 0.0))
+    )
+    raw_growth = (
+        industry_contribution
+        + gdp_per_capita_contribution
+        + population_contribution
+        + transition_bonus
+        + scenario_shock
+        + property_drag
+        + substitution_drag
+    )
+    demand_growth = _clip(
+        raw_growth,
+        float(demand_config["growth_floor"]),
+        float(demand_config["growth_cap"]),
+    )
+    return {
+        "industry_contribution": industry_contribution,
+        "gdp_per_capita_contribution": gdp_per_capita_contribution,
+        "population_contribution": population_contribution,
+        "transition_bonus": transition_bonus,
+        "scenario_shock": scenario_shock,
+        "property_downturn_drag": property_drag,
+        "substitution_drag": substitution_drag,
+        "raw_demand_growth": raw_growth,
+        "clip_adjustment": demand_growth - raw_growth,
+        "demand_growth": demand_growth,
+    }
+
+
 def estimate_regional_demand_growth(
     config: dict[str, Any], macro: pd.DataFrame | None
 ) -> pd.DataFrame:
     """Estimate demand growth by region from public macro data."""
 
     demand_config = config["demand"]
-    weights = demand_config["driver_weights"]
     lookback = int(demand_config["macro_lookback_years"])
-    floor = float(demand_config["growth_floor"])
-    cap = float(demand_config["growth_cap"])
-    shock = float(demand_config["scenario_growth_shock"])
+    display_year = int(config.get("base_year", 2024)) + 1
 
     if macro is None or macro.empty:
         pivot = pd.DataFrame()
@@ -145,14 +201,9 @@ def estimate_regional_demand_growth(
             if not pivot.empty
             else {"industry": 0.02, "gdp_per_capita": 0.015, "population": 0.005}
         )
-        raw_growth = (
-            float(weights["industry_value_added"]) * growth["industry"]
-            + float(weights["gdp_per_capita"]) * growth["gdp_per_capita"]
-            + float(weights["population"]) * growth["population"]
-            + float(region_config["transition_growth_bonus"])
-            + shock
+        components = _demand_growth_components(
+            demand_config, region_config, growth, display_year
         )
-        demand_growth = _clip(raw_growth, floor, cap)
         rows.append(
             {
                 "region": region,
@@ -160,17 +211,7 @@ def estimate_regional_demand_growth(
                 "industry_growth": growth["industry"],
                 "gdp_per_capita_growth": growth["gdp_per_capita"],
                 "population_growth": growth["population"],
-                "industry_contribution": float(weights["industry_value_added"])
-                * growth["industry"],
-                "gdp_per_capita_contribution": float(weights["gdp_per_capita"])
-                * growth["gdp_per_capita"],
-                "population_contribution": float(weights["population"])
-                * growth["population"],
-                "transition_bonus": float(region_config["transition_growth_bonus"]),
-                "scenario_shock": shock,
-                "raw_demand_growth": raw_growth,
-                "clip_adjustment": demand_growth - raw_growth,
-                "demand_growth": demand_growth,
+                **components,
             }
         )
     return pd.DataFrame(rows)
@@ -224,8 +265,10 @@ def run_model(
         region: float(demand_config["global_refined_demand_kt"]) * float(cfg["share"])
         for region, cfg in demand_config["regions"].items()
     }
-    growth_by_region = regional_growth.set_index("region")["demand_growth"].to_dict()
-    growth_detail_by_region = regional_growth.set_index("region").to_dict("index")
+    macro_growth_by_region = regional_growth.set_index("region")[
+        ["industry_growth", "gdp_per_capita_growth", "population_growth"]
+    ].to_dict("index")
+    region_configs = demand_config["regions"]
 
     global_rows: list[dict[str, object]] = []
     primary_refined = float(supply_by_year.loc[base_year, "primary_refined_supply_kt"])
@@ -233,13 +276,31 @@ def run_model(
     mine_supply = float(supply_by_year.loc[base_year, "mine_supply_kt"])
 
     for year in years:
+        growth_detail_by_region = {
+            region: _demand_growth_components(
+                demand_config,
+                region_configs[region],
+                {
+                    "industry": float(macro_growth["industry_growth"]),
+                    "gdp_per_capita": float(macro_growth["gdp_per_capita_growth"]),
+                    "population": float(macro_growth["population_growth"]),
+                },
+                year if year > base_year else base_year + 1,
+            )
+            for region, macro_growth in macro_growth_by_region.items()
+        }
         secondary_growth = 0.0
         if year > base_year:
             for region in demand_by_region:
-                demand_by_region[region] *= 1 + float(growth_by_region[region])
+                demand_by_region[region] *= 1 + float(
+                    growth_detail_by_region[region]["demand_growth"]
+                )
 
             global_demand_growth = np.average(
-                [growth_by_region[region] for region in demand_by_region],
+                [
+                    growth_detail_by_region[region]["demand_growth"]
+                    for region in demand_by_region
+                ],
                 weights=[demand_by_region[region] for region in demand_by_region],
             )
             secondary_growth = (
@@ -263,7 +324,7 @@ def run_model(
                     "year": year,
                     "region": region,
                     "demand_kt": demand_kt,
-                    "growth_rate": growth_by_region[region],
+                    "growth_rate": growth_detail_by_region[region]["demand_growth"],
                     "industry_contribution": growth_detail_by_region[region][
                         "industry_contribution"
                     ],
@@ -275,6 +336,12 @@ def run_model(
                     ],
                     "transition_bonus": growth_detail_by_region[region][
                         "transition_bonus"
+                    ],
+                    "property_downturn_drag": growth_detail_by_region[region][
+                        "property_downturn_drag"
+                    ],
+                    "substitution_drag": growth_detail_by_region[region][
+                        "substitution_drag"
                     ],
                     "scenario_shock": growth_detail_by_region[region]["scenario_shock"],
                     "raw_demand_growth": growth_detail_by_region[region][
@@ -350,26 +417,26 @@ def _build_supply_conversion_bridge(
                 "step_order": 1,
                 "step": "Risk-adjusted mine supply",
                 "kt": float(item.mine_supply_kt),
-                "note": "Reported operating output plus probability-weighted project and expansion output.",
+                "note": "Reported operating output plus configured probability-weighted project and expansion output.",
             },
             {
                 "step_order": 2,
                 "step": "Payable / route calibration",
                 "kt": float(item.primary_refined_before_constraints_kt)
                 - float(item.mine_supply_kt),
-                "note": "Calibrates mine copper content to 2024 primary refined output before bottlenecks.",
+                "note": "Calibrates mine copper content to the 2024 ICSG primary refined anchor before bottlenecks.",
             },
             {
                 "step_order": 3,
                 "step": "Smelter / refinery constraint",
                 "kt": -float(item.smelter_refinery_constraint_kt),
-                "note": "Loss when concentrate availability exceeds assumed processing capacity growth.",
+                "note": "Loss when concentrate availability exceeds configured processing capacity growth.",
             },
             {
                 "step_order": 4,
                 "step": "Blending / maintenance constraint",
                 "kt": -float(item.blending_constraint_kt),
-                "note": "Allowance for concentrate quality; blending; planned conversion downtime.",
+                "note": "Configured allowance for concentrate quality; blending; planned conversion downtime.",
             },
             {
                 "step_order": 5,

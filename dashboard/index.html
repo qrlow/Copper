@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Copper Supply-Demand Dashboard</title>
-    <link rel="stylesheet" href="./styles.css?v=2026-07-13-reference-model-copy" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-icsg-anchor-calibration" />
   </head>
   <body>
     <main class="app-shell">
@@ -30,6 +30,8 @@
         <button class="tab-button is-active" type="button" role="tab" aria-selected="true" data-tab-target="modelTab">Model</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="supplyTab">Supply</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="workbookTab">Reference Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="icsgTab">ICSG Model</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="modelComparisonTab">Model Comparison</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab-target="regressionTab">GDP-Copper Usage Relationship</button>
       </nav>
 
@@ -165,7 +167,7 @@
             <span id="demandFactorBadge" class="badge">--</span>
           </div>
           <div id="demandFactorRows" class="factor-list"></div>
-          <p class="panel-note">Weighted annual demand growth is built from fixed 10-year historical CAGRs for industry activity, GDP per capita, population, plus energy-transition bonus and scenario shock.</p>
+          <p class="panel-note">Weighted annual demand growth is built from fixed 10-year historical CAGRs for industry activity, GDP per capita, and population, then adjusted for a smaller energy-transition bonus, China property downturn drag, substitution drag, and scenario shock.</p>
         </article>
 
         <article class="panel factor-panel">
@@ -226,10 +228,10 @@
           <span class="badge">Assumptions, not sourced forecasts</span>
         </div>
         <div class="explanation-copy">
-          <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, USGS MCS 2026 2024 world mine/refinery supply, and World Bank macro drivers.</p>
+          <p>The same public data baseline is used in every scenario: ICSG 2024 refined usage, ICSG 2024 world mine/refined production, and World Bank macro drivers.</p>
           <p>The World Bank macro growth rates are fixed historical lookback rates applied across the forecast horizon; they are not rolling future forecasts.</p>
           <p>The demand-driver weights are scenario assumptions. A regression diagnostic is shown below, but it is not used as the forecast weighting because fit is weak and the macro predictors overlap mechanically.</p>
-          <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, mine/refinery growth, disruption loss, and scrap/recycling response.</p>
+          <p>The scenarios change only the assumption knobs: demand growth, transition-demand bonus, China property drag, substitution, mine/refinery growth, disruption loss, conversion constraints, and scrap/recycling response.</p>
           <p>Bull means stronger demand and tighter supply. Bear means weaker demand and looser supply. Base sits between them.</p>
         </div>
         <div id="selectedScenarioExplanation" class="scenario-summary"></div>
@@ -265,7 +267,7 @@
 
           <article class="source-card">
             <h3>ICSG Market Context</h3>
-            <p>Used for the 2024 refined usage baseline, China/regional usage shares, primary/secondary definitions, capacity trends, supply constraints, scrap/recycling context, and historical world refined usage for the demand-driver and world-GDP regressions.</p>
+            <p>Used for the exact 2024 mine production, refined production, and refined usage anchors; China/regional usage shares; primary/secondary definitions; capacity trends; supply constraints; scrap/recycling context; and historical world refined usage for the demand-driver and world-GDP regressions.</p>
             <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
             <a href="../data/seed/icsg_world_copper_balance_1960_2024.csv" target="_blank" rel="noreferrer">Local historical balance seed</a>
           </article>
@@ -296,8 +298,8 @@
           </article>
 
           <article class="source-card">
-            <h3>Mine & Refinery Baseline</h3>
-            <p>USGS Mineral Commodity Summaries 2026 gives the updated 2024 world mine/refinery baseline: 23,000 kt mine production and 27,600 kt refinery production. The country table remains the local transcribed MCS 2025 seed.</p>
+            <h3>Mine & Refinery Cross-Check</h3>
+            <p>USGS Mineral Commodity Summaries 2026 is retained as a public cross-check, but the model baseline now uses the transcribed ICSG 2024 world mine production and refined production figures exactly. The country table remains the local transcribed MCS 2025 seed.</p>
             <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf" target="_blank" rel="noreferrer">USGS MCS 2026 PDF</a>
             <a href="https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-copper.pdf" target="_blank" rel="noreferrer">USGS MCS 2025 Copper PDF</a>
             <a href="../data/seed/usgs_mcs_2025_country_supply.csv" target="_blank" rel="noreferrer">Local transcribed country table</a>
@@ -337,6 +339,8 @@
             <a href="../outputs/workbook_demand_components.csv" target="_blank" rel="noreferrer">Reference model demand components CSV</a>
             <a href="../outputs/workbook_mine_supply_country.csv" target="_blank" rel="noreferrer">Reference model mine supply by country CSV</a>
             <a href="../outputs/workbook_major_mines.csv" target="_blank" rel="noreferrer">Reference model major mines CSV</a>
+            <a href="../outputs/icsg_forecast_2026_04_23.csv" target="_blank" rel="noreferrer">ICSG forecast CSV</a>
+            <a href="../outputs/icsg_regional_forecast_2026_04_23.csv" target="_blank" rel="noreferrer">ICSG regional forecast CSV</a>
           </article>
         </div>
       </section>
@@ -475,7 +479,7 @@
             </div>
             <div class="source-card embedded">
               <h3>Core Public Sources</h3>
-              <p>USGS anchors the 2024 global mine/refinery totals. ICSG anchors the large-project universe and refined-production route split. Company pages and reports anchor individual asset context. Assumptions are shown row by row where public data is incomplete.</p>
+              <p>ICSG anchors the 2024 global mine/refinery totals, the large-project universe, and the refined-production route split. USGS remains a cross-check for public mine/refinery totals. Company pages and reports anchor individual asset context. Assumptions are shown row by row where public data is incomplete.</p>
               <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf" target="_blank" rel="noreferrer">USGS MCS 2026</a>
               <a href="https://icsg.org/copper-factbook/" target="_blank" rel="noreferrer">ICSG World Copper Factbook</a>
               <a href="../data/seed/global_copper_supply_assets.csv" target="_blank" rel="noreferrer">Supply asset seed CSV</a>
@@ -653,6 +657,158 @@
         </section>
       </section>
 
+      <section id="icsgTab" class="tab-panel is-hidden" aria-labelledby="icsgHeading">
+        <section class="panel workbook-hero">
+          <div class="panel-header">
+            <h2 id="icsgHeading">ICSG Model</h2>
+            <span id="icsgDataBadge" class="badge">23 Apr 2026</span>
+          </div>
+          <p class="workbook-lede">ICSG's April 2026 world refined copper forecast covers 2025-2027. The balance uses the published China apparent usage basis and the adjusted world supply rows.</p>
+          <p id="icsgNarrativeLead" class="workbook-narrative-lead">--</p>
+          <div class="workbook-metrics" aria-label="ICSG model summary metrics">
+            <article class="metric compact">
+              <span>2027 Balance</span>
+              <strong id="icsgFinalBalance">--</strong>
+              <small>world refined copper</small>
+            </article>
+            <article class="metric compact">
+              <span>2027 Refined Production</span>
+              <strong id="icsgFinalProduction">--</strong>
+              <small>adjusted world supply</small>
+            </article>
+            <article class="metric compact">
+              <span>2027 Refined Consumption</span>
+              <strong id="icsgFinalConsumption">--</strong>
+              <small>apparent refined usage</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="icsg-grid" aria-label="ICSG forecast visuals">
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>ICSG Refined Market Balance</h2>
+              <span class="badge">2025-2027</span>
+            </div>
+            <div id="icsgBalanceChart" class="chart large" role="img" aria-label="ICSG refined production, refined consumption, and market balance"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>Published Growth Rates</h2>
+              <span class="badge">% change</span>
+            </div>
+            <div id="icsgGrowthRows" class="factor-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>2027 Refined Production By Region</h2>
+              <span id="icsgProductionRegionBadge" class="badge">--</span>
+            </div>
+            <div id="icsgRegionalProductionChart" class="workbook-country-bars" role="img" aria-label="ICSG regional refined production"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h2>2027 Refined Consumption By Region</h2>
+              <span id="icsgConsumptionRegionBadge" class="badge">--</span>
+            </div>
+            <div id="icsgRegionalConsumptionChart" class="workbook-country-bars" role="img" aria-label="ICSG regional refined consumption"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>ICSG Regional Forecast</h2>
+              <span class="badge">'000 tonnes Cu</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table icsg-table">
+                <thead>
+                  <tr>
+                    <th>Region</th>
+                    <th>Year</th>
+                    <th>Mine production</th>
+                    <th>Refined production</th>
+                    <th>Refined consumption</th>
+                  </tr>
+                </thead>
+                <tbody id="icsgRegionalRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section id="modelComparisonTab" class="tab-panel is-hidden" aria-labelledby="modelComparisonHeading">
+        <section class="panel workbook-hero">
+          <div class="panel-header">
+            <h2 id="modelComparisonHeading">Model Comparison</h2>
+            <span class="badge">common years: 2025-2027</span>
+          </div>
+          <p class="workbook-lede">This compares the selected dashboard scenario, the reference model, and the ICSG press-release model on total refined consumption and total refined production.</p>
+          <p id="modelComparisonNarrative" class="workbook-narrative-lead">--</p>
+          <div class="workbook-metrics" aria-label="Model comparison metrics">
+            <article class="metric compact">
+              <span>Selected Model Scenario</span>
+              <strong id="comparisonScenarioMetric">--</strong>
+              <small>changes with scenario selector</small>
+            </article>
+            <article class="metric compact">
+              <span>2027 Consumption Gap</span>
+              <strong id="comparisonConsumptionGap">--</strong>
+              <small>Model minus ICSG</small>
+            </article>
+            <article class="metric compact">
+              <span>2027 Production Gap</span>
+              <strong id="comparisonProductionGap">--</strong>
+              <small>Model minus ICSG</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="comparison-grid" aria-label="Model comparison visuals">
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Total Refined Consumption</h2>
+              <span class="badge">'000 tonnes Cu</span>
+            </div>
+            <div id="comparisonConsumptionChart" class="chart comparison-chart" role="img" aria-label="Total refined consumption comparison"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Total Refined Production</h2>
+              <span class="badge">'000 tonnes Cu</span>
+            </div>
+            <div id="comparisonProductionChart" class="chart comparison-chart" role="img" aria-label="Total refined production comparison"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <h2>Comparison Table</h2>
+              <span class="badge">Model/reference gaps vs ICSG</span>
+            </div>
+            <div class="compact-table-wrap">
+              <table class="compact-table model-comparison-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Metric</th>
+                    <th>Model</th>
+                    <th>Reference Model</th>
+                    <th>ICSG Model</th>
+                    <th>Model vs ICSG</th>
+                    <th>Reference vs ICSG</th>
+                  </tr>
+                </thead>
+                <tbody id="modelComparisonRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </section>
+
       <section id="regressionTab" class="tab-panel is-hidden" aria-labelledby="regressionHeading">
         <section class="panel regression-hero">
           <div class="panel-header">
@@ -795,6 +951,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=2026-07-13-reference-model-copy"></script>
+    <script src="./app.js?v=2026-07-13-icsg-anchor-calibration"></script>
   </body>
 </html>

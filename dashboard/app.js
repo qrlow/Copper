@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-reference-model-copy";
+const DATA_VERSION = "2026-07-13-icsg-anchor-calibration";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -78,6 +78,13 @@ function workbookFiles() {
   };
 }
 
+function icsgFiles() {
+  return {
+    forecast: versionedAppUrl("outputs/icsg_forecast_2026_04_23.csv"),
+    regional: versionedAppUrl("outputs/icsg_regional_forecast_2026_04_23.csv"),
+  };
+}
+
 const colors = {
   copper: "#b65f2a",
   teal: "#207b7f",
@@ -100,6 +107,12 @@ const regionColors = {
 const supplyBreakdownColors = {
   "Primary refined": colors.copper,
   "Secondary refined": colors.teal,
+};
+
+const modelSourceColors = {
+  Model: colors.copper,
+  "Reference Model": colors.blue,
+  "ICSG Model": colors.teal,
 };
 
 const sourceUrls = {
@@ -127,6 +140,8 @@ const sourceUrls = {
   workbookDemandComponents: appUrl("outputs/workbook_demand_components.csv"),
   workbookMajorMines: appUrl("outputs/workbook_major_mines.csv"),
   workbookMineSupplyCountry: appUrl("outputs/workbook_mine_supply_country.csv"),
+  icsgForecast: appUrl("outputs/icsg_forecast_2026_04_23.csv"),
+  icsgRegionalForecast: appUrl("outputs/icsg_regional_forecast_2026_04_23.csv"),
   supplyAssetSeed: appUrl("data/seed/global_copper_supply_assets.csv"),
   supplyDisruptionsSeed: appUrl("data/seed/global_copper_supply_disruptions.csv"),
   baseSupplyAssets: appUrl("outputs/base_case_supply_assets.csv"),
@@ -197,6 +212,17 @@ function splitCsvLine(line) {
 
 function formatKt(value) {
   return `${Math.round(value).toLocaleString()}`;
+}
+
+function formatOptionalKt(value) {
+  if (value === "" || value === null || value === undefined) return "--";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? formatKt(numeric) : "--";
+}
+
+function formatOptionalKtUnit(value) {
+  const formatted = formatOptionalKt(value);
+  return formatted === "--" ? formatted : `${formatted} kt`;
 }
 
 function formatSignedKt(value) {
@@ -785,6 +811,16 @@ function renderFactorBreakdowns(forecastRow, regionalRows, config) {
       value: weightedAverage(regionalRows, (row) => row.transition_bonus),
     },
     {
+      label: "China property downturn",
+      detail: "phased regional drag, weighted by demand share",
+      value: weightedAverage(regionalRows, (row) => row.property_downturn_drag),
+    },
+    {
+      label: "Substitution / intensity drag",
+      detail: "material substitution and copper-thrifting assumption",
+      value: weightedAverage(regionalRows, (row) => row.substitution_drag),
+    },
+    {
       label: "Scenario shock",
       detail: config.demand.scenario_growth_shock === 0 ? "no additional shock" : "scenario stress adjustment",
       value: Number(config.demand.scenario_growth_shock),
@@ -1045,6 +1081,22 @@ function regionBonusText(config) {
     .join("; ");
 }
 
+function regionPropertyText(config) {
+  return Object.entries(config.demand.regions)
+    .filter(([, region]) => Number(region.property_downturn_drag || 0) !== 0)
+    .map(
+      ([name, region]) =>
+        `${name}: ${formatSignedPct(region.property_downturn_drag)} by ${region.property_downturn_end_year}`,
+    )
+    .join("; ") || "No explicit property downturn drag";
+}
+
+function regionSubstitutionText(config) {
+  return Object.entries(config.demand.regions)
+    .map(([name, region]) => `${name}: ${formatSignedPct(region.substitution_drag || 0)}`)
+    .join("; ");
+}
+
 function scenarioCell(state, scenarioId, formatter) {
   return formatter(state.scenarios[scenarioId].config);
 }
@@ -1058,16 +1110,16 @@ function renderScenarioExplanation(state) {
     {
       label: "Starting refined demand",
       source: sourceNote(
-        "ICSG Factbook 2025 reports 2024 refined copper usage at 27.4 Mt. The model stores that as 27,400 kt.",
-        [sourceLink("ICSG usage", sourceUrls.icsgFactbook), ...configLinkItems()],
+        "The model now anchors 2024 refined copper usage exactly to the transcribed ICSG historical balance seed: 27,353 kt.",
+        [sourceLink("ICSG usage seed", sourceUrls.icsgHistoricalBalance), ...configLinkItems()],
       ),
       format: (config) => `${formatKt(config.demand.global_refined_demand_kt)} kt in ${config.base_year}`,
     },
     {
       label: "Starting mine/refinery supply",
       source: sourceNote(
-        "USGS Mineral Commodity Summaries 2026 reports 2024 world mine production at 23,000 kt and refinery production at 27,600 kt.",
-        [sourceLink("USGS copper table", sourceUrls.usgsCopper), ...configLinkItems()],
+        "The model now anchors 2024 mine production and refined production exactly to the transcribed ICSG historical balance seed: 22,990 kt mined copper and 27,486 kt refined production.",
+        [sourceLink("ICSG historical balance seed", sourceUrls.icsgHistoricalBalance), ...configLinkItems()],
       ),
       format: (config) =>
         `${formatKt(config.supply.mine_production_kt)} kt mine, ${formatKt(
@@ -1116,11 +1168,36 @@ function renderScenarioExplanation(state) {
     {
       label: "Energy-transition bonus",
       source: sourceNote(
-        "IEA provides copper demand and supply outlooks across energy-transition scenarios. The dashboard uses that as the reason for a transition-demand bonus; the exact annual bonus is a model assumption.",
+        "IEA provides copper demand and supply outlooks across energy-transition scenarios. The model applies this as a smaller annual add-on to each region's total demand growth; the exact percentages are scenario assumptions, not an IEA forecast.",
         [sourceLink("IEA copper outlook", sourceUrls.ieaCriticalMinerals), ...configLinkItems()],
       ),
       format: (config) => `${formatPct(averageTransitionBonus(config))} weighted average per year`,
       detail: regionBonusText,
+    },
+    {
+      label: "China property downturn",
+      source: sourceNote(
+        "This is an explicit model adjustment for the risk that China construction/property copper intensity grows more slowly than the trailing macro history implies. It is phased in from the scenario JSON rather than sourced as a precise published forecast.",
+        [sourceLink("ICSG historical usage", sourceUrls.icsgHistoricalBalance), ...configLinkItems()],
+      ),
+      format: (config) =>
+        `${formatSignedPct(config.demand.regions.China.property_downturn_drag || 0)} by ${config.demand.regions.China.property_downturn_end_year || config.forecast_end_year}`,
+      detail: regionPropertyText,
+    },
+    {
+      label: "Substitution / intensity drag",
+      source: sourceNote(
+        "This is a model allowance for copper substitution, material efficiency, and copper-thrifting. It reduces regional demand growth after the macro and transition terms.",
+        [sourceLink("ICSG scrap and usage context", sourceUrls.icsgFactbook), ...configLinkItems()],
+      ),
+      format: (config) =>
+        `${formatSignedPct(
+          Object.values(config.demand.regions).reduce(
+            (sum, region) => sum + Number(region.share) * Number(region.substitution_drag || 0),
+            0,
+          ),
+        )} weighted average per year`,
+      detail: regionSubstitutionText,
     },
     {
       label: "Demand growth cap",
@@ -1146,7 +1223,7 @@ function renderScenarioExplanation(state) {
     {
       label: "Mine/refinery project growth",
       source: sourceNote(
-        "Primary supply is built in the Supply tab from asset-level production, ramp-ups, project probability, disruptions, and mine-to-refined conversion constraints. This scenario knob changes how much project supply is credited.",
+        "Primary supply is built in the Supply tab from asset-level production, ramp-ups, project probability, disruptions, and mine-to-refined conversion constraints. The model now uses lighter project probability discounts and an explicit rest-of-world growth rate rather than the old conservative residual formula.",
         [
           sourceLink("Supply asset seed", sourceUrls.supplyAssetSeed),
           sourceLink("Supply summary", sourceUrls.baseSupplySummary),
@@ -1155,6 +1232,29 @@ function renderScenarioExplanation(state) {
         ],
       ),
       format: (config) => `${formatPct(config.supply.project_pipeline_growth)} per year`,
+    },
+    {
+      label: "Rest-of-world mine growth",
+      source: sourceNote(
+        "The prior model barely grew residual rest-of-world mine supply because it used a conservative formula tied to project growth net of disruptions. This is now an explicit scenario assumption.",
+        [sourceLink("Supply summary", sourceUrls.baseSupplySummary), ...configLinkItems()],
+      ),
+      format: (config) => `${formatPct(config.supply.rest_of_world_growth)} per year`,
+    },
+    {
+      label: "Conversion constraints",
+      source: sourceNote(
+        "The mine-to-refined bridge converts risk-adjusted mine supply into primary refined supply using a 2024 ICSG calibration factor, then subtracts configured smelter/refinery and blending constraints. These constraints have been loosened so the bridge is not the main reason production is below reference cases.",
+        [
+          sourceLink("Supply conversion bridge", sourceUrls.baseSupplyBridge),
+          sourceLink("Supply summary", sourceUrls.baseSupplySummary),
+          ...configLinkItems(),
+        ],
+      ),
+      format: (config) =>
+        `maintenance ${formatNumber(config.supply.maintenance_loss_multiplier, 2)}x, capacity growth ${formatPct(
+          config.supply.concentrate_processing_capacity_growth,
+        )}, blending ${formatPct(config.supply.blending_constraint_pct)}`,
     },
     {
       label: "Disruption loss",
@@ -2030,6 +2130,350 @@ function renderWorkbookTab(workbook) {
   }
 }
 
+function icsgYearRow(rows, year) {
+  return rows.find((row) => Math.round(row.year) === year) ?? rows.at(-1);
+}
+
+function renderIcsgBalanceChart(rows) {
+  const container = document.getElementById("icsgBalanceChart");
+  const width = 960;
+  const height = 390;
+  const margin = { top: 18, right: 28, bottom: 54, left: 68 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = 260;
+  const years = rows.map((row) => row.year);
+  const [minYear, maxYear] = extent(years);
+  const yValues = rows.flatMap((row) => [
+    row.refined_consumption_kt,
+    row.refined_production_adjusted_kt,
+  ]);
+  const [minY, maxY] = extent(yValues);
+  const balanceExtent = Math.max(...rows.map((row) => Math.abs(row.market_balance_kt)), 1);
+  const x = scaleLinear(minYear, maxYear, margin.left, margin.left + chartWidth);
+  const y = scaleLinear(minY * 0.985, maxY * 1.02, margin.top + chartHeight, margin.top);
+  const balanceZeroY = margin.top + chartHeight + 34;
+  const balanceHeight = 46;
+  const barWidth = Math.max(36, chartWidth / rows.length - 78);
+  const yTicks = [minY, (minY + maxY) / 2, maxY];
+  const consumptionPath = linePath(rows, (row) => x(row.year), (row) => y(row.refined_consumption_kt));
+  const productionPath = linePath(rows, (row) => x(row.year), (row) => y(row.refined_production_adjusted_kt));
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatKt(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      <path class="series-demand" d="${consumptionPath}" />
+      <path class="series-supply" d="${productionPath}" />
+      ${rows
+        .map((row) => {
+          const h = (Math.abs(row.market_balance_kt) / balanceExtent) * balanceHeight;
+          const positive = row.market_balance_kt >= 0;
+          return `
+            <rect
+              class="${positive ? "balance-positive" : "balance-negative"}"
+              x="${x(row.year) - barWidth / 2}"
+              y="${positive ? balanceZeroY - h : balanceZeroY}"
+              width="${barWidth}"
+              height="${Math.max(h, 1)}"
+              rx="2"
+            />
+          `;
+        })
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${balanceZeroY}" y2="${balanceZeroY}" />
+      ${rows
+        .map((row) => `<text x="${x(row.year)}" y="${height - 14}" text-anchor="middle">${row.year}</text>`)
+        .join("")}
+      <text x="${margin.left - 38}" y="${height - 16}" text-anchor="start">kt</text>
+    </svg>
+    ${renderLegend([
+      { label: "Refined consumption", color: colors.copper },
+      { label: "Adjusted refined production", color: colors.teal },
+      { label: "Refined balance", color: colors.green },
+    ])}
+  `;
+}
+
+function renderIcsgGrowthRows(rows) {
+  const growthRows = rows
+    .filter((row) => row.year >= 2026)
+    .flatMap((row) => [
+      {
+        label: `${Math.round(row.year)} mine production`,
+        detail: "world adjusted mine production growth",
+        value: row.mine_production_growth,
+      },
+      {
+        label: `${Math.round(row.year)} refined production`,
+        detail: "world adjusted refined production growth",
+        value: row.refined_production_growth,
+      },
+      {
+        label: `${Math.round(row.year)} refined usage`,
+        detail: "world apparent refined consumption growth",
+        value: row.refined_consumption_growth,
+      },
+    ]);
+  renderFactorRows("icsgGrowthRows", growthRows);
+}
+
+function renderIcsgRegionalBars(containerId, badgeId, rows, year, valueField) {
+  const regionRows = rows
+    .filter((row) => Math.round(row.year) === year && row[valueField] !== "")
+    .map((row) => ({ ...row, value: Number(row[valueField]) }))
+    .filter((row) => Number.isFinite(row.value))
+    .sort((a, b) => b.value - a.value);
+  const total = regionRows.reduce((sum, row) => sum + row.value, 0);
+  const max = Math.max(...regionRows.map((row) => row.value), 1);
+
+  document.getElementById(badgeId).textContent = `${formatKt(total)} kt`;
+  document.getElementById(containerId).innerHTML = regionRows
+    .map((row) => {
+      const share = total > 0 ? row.value / total : 0;
+      return `
+        <div class="country-row">
+          <span class="bar-label" title="${row.region}">${row.region}</span>
+          <span class="bar-track">
+            <span class="bar-fill" style="width:${(row.value / max) * 100}%"></span>
+          </span>
+          <span class="country-value">${formatKt(row.value)} kt</span>
+          <span class="country-change neutral">${formatPct(share, 0)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderIcsgRegionalRows(rows) {
+  document.getElementById("icsgRegionalRows").innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.region}</td>
+          <td>${Math.round(row.year)}</td>
+          <td>${formatKt(row.mine_production_kt)} kt</td>
+          <td>${formatKt(row.refined_production_kt)} kt</td>
+          <td>${formatOptionalKtUnit(row.refined_consumption_kt)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function renderIcsgTab(icsg) {
+  const rows = icsg.forecast;
+  const regionalRows = icsg.regional;
+  const final = icsgYearRow(rows, 2027);
+  const prior = icsgYearRow(rows, 2026);
+
+  document.getElementById("icsgDataBadge").textContent = "2025-2027 forecast";
+  document.getElementById("icsgNarrativeLead").textContent =
+    `ICSG forecasts a refined copper surplus of ${formatKt(prior.market_balance_kt)} kt in 2026, widening to ${formatKt(
+      final.market_balance_kt,
+    )} kt in 2027 as adjusted refined production rises ${formatPct(
+      final.refined_production_growth,
+    )} and refined usage rises ${formatPct(final.refined_consumption_growth)}.`;
+  document.getElementById("icsgFinalBalance").textContent = formatBalance(
+    final.market_balance_kt,
+  );
+  document.getElementById("icsgFinalBalance").className = balanceClass(
+    final.market_balance_kt,
+  );
+  document.getElementById("icsgFinalProduction").textContent = `${formatKt(
+    final.refined_production_adjusted_kt,
+  )} kt`;
+  document.getElementById("icsgFinalConsumption").textContent = `${formatKt(
+    final.refined_consumption_kt,
+  )} kt`;
+
+  renderIcsgBalanceChart(rows);
+  renderIcsgGrowthRows(rows);
+  renderIcsgRegionalBars(
+    "icsgRegionalProductionChart",
+    "icsgProductionRegionBadge",
+    regionalRows,
+    2027,
+    "refined_production_kt",
+  );
+  renderIcsgRegionalBars(
+    "icsgRegionalConsumptionChart",
+    "icsgConsumptionRegionBadge",
+    regionalRows,
+    2027,
+    "refined_consumption_kt",
+  );
+  renderIcsgRegionalRows(regionalRows);
+}
+
+function buildModelComparisonRows(state) {
+  const years = state.icsg.forecast.map((row) => Math.round(row.year));
+  const scenario = state.scenarios[state.selectedScenarioId];
+  return years.flatMap((year) => {
+    const modelRow = rowForYear(scenario, year);
+    const referenceRow = workbookYearRow(state.workbook.marketBalance, year);
+    const icsgRow = icsgYearRow(state.icsg.forecast, year);
+    return [
+      {
+        year,
+        metric: "Total refined consumption",
+        model: modelRow.demand_kt,
+        reference: referenceRow.refined_consumption_kt,
+        icsg: icsgRow.refined_consumption_kt,
+      },
+      {
+        year,
+        metric: "Total refined production",
+        model: modelRow.refined_supply_kt,
+        reference: referenceRow.refined_production_kt,
+        icsg: icsgRow.refined_production_adjusted_kt,
+      },
+    ];
+  });
+}
+
+function comparisonSeriesRows(rows, metric) {
+  return rows
+    .filter((row) => row.metric === metric)
+    .flatMap((row) => [
+      { year: row.year, source: "Model", value: row.model },
+      { year: row.year, source: "Reference Model", value: row.reference },
+      { year: row.year, source: "ICSG Model", value: row.icsg },
+    ]);
+}
+
+function renderGroupedComparisonChart(containerId, rows, metric) {
+  const container = document.getElementById(containerId);
+  const points = comparisonSeriesRows(rows, metric);
+  const years = [...new Set(points.map((point) => point.year))];
+  const sources = ["Model", "Reference Model", "ICSG Model"];
+  const values = points.map((point) => point.value);
+  const [minValue, maxValue] = extent(values);
+  const yMin = Math.floor((minValue * 0.975) / 250) * 250;
+  const yMax = Math.ceil((maxValue * 1.015) / 250) * 250;
+  const width = 960;
+  const height = 330;
+  const margin = { top: 22, right: 24, bottom: 58, left: 74 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const groupWidth = chartWidth / years.length;
+  const barWidth = Math.min(46, (groupWidth - 34) / sources.length);
+  const xForYear = (year) =>
+    margin.left + groupWidth * years.indexOf(year) + groupWidth / 2;
+  const y = scaleLinear(yMin, yMax, margin.top + chartHeight, margin.top);
+  const yTicks = [yMin, (yMin + yMax) / 2, yMax];
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+      ${yTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatKt(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      ${points
+        .map((point) => {
+          const sourceIndex = sources.indexOf(point.source);
+          const x =
+            xForYear(point.year) -
+            ((sources.length * barWidth) / 2) +
+            sourceIndex * barWidth;
+          const barHeight = Math.max(y(yMin) - y(point.value), 1);
+          return `
+            <rect
+              x="${x}"
+              y="${y(point.value)}"
+              width="${barWidth - 4}"
+              height="${barHeight}"
+              rx="2"
+              fill="${modelSourceColors[point.source]}"
+            />
+          `;
+        })
+        .join("")}
+      ${years
+        .map((year) => `<text x="${xForYear(year)}" y="${height - 18}" text-anchor="middle">${year}</text>`)
+        .join("")}
+      <text x="${margin.left - 42}" y="${height - 20}" text-anchor="start">kt</text>
+    </svg>
+    ${renderLegend(sources.map((source) => ({ label: source, color: modelSourceColors[source] })))}
+  `;
+}
+
+function renderModelComparisonRows(rows) {
+  document.getElementById("modelComparisonRows").innerHTML = rows
+    .map((row) => {
+      const modelGap = row.model - row.icsg;
+      const referenceGap = row.reference - row.icsg;
+      const modelTone = modelGap < 0 ? "negative" : "positive";
+      const referenceTone = referenceGap < 0 ? "negative" : "positive";
+      return `
+        <tr>
+          <td>${row.year}</td>
+          <td>${row.metric}</td>
+          <td>${formatKt(row.model)} kt</td>
+          <td>${formatKt(row.reference)} kt</td>
+          <td>${formatKt(row.icsg)} kt</td>
+          <td class="${modelTone}">${formatSignedKt(modelGap)} kt</td>
+          <td class="${referenceTone}">${formatSignedKt(referenceGap)} kt</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderModelComparisonTab(state) {
+  const scenario = state.scenarios[state.selectedScenarioId];
+  const rows = buildModelComparisonRows(state);
+  const consumption2027 = rows.find(
+    (row) => row.year === 2027 && row.metric === "Total refined consumption",
+  );
+  const production2027 = rows.find(
+    (row) => row.year === 2027 && row.metric === "Total refined production",
+  );
+  const consumptionGap = consumption2027.model - consumption2027.icsg;
+  const productionGap = production2027.model - production2027.icsg;
+
+  document.getElementById("comparisonScenarioMetric").textContent = scenario.label;
+  document.getElementById("comparisonConsumptionGap").textContent = `${formatSignedKt(
+    consumptionGap,
+  )} kt`;
+  document.getElementById("comparisonConsumptionGap").className =
+    consumptionGap < 0 ? "negative" : "positive";
+  document.getElementById("comparisonProductionGap").textContent = `${formatSignedKt(
+    productionGap,
+  )} kt`;
+  document.getElementById("comparisonProductionGap").className =
+    productionGap < 0 ? "negative" : "positive";
+  document.getElementById("modelComparisonNarrative").textContent =
+    `In 2027, ${scenario.label} model refined consumption is ${formatKt(
+      consumption2027.model,
+    )} kt versus ICSG's ${formatKt(consumption2027.icsg)} kt, while refined production is ${formatKt(
+      production2027.model,
+    )} kt versus ICSG's adjusted ${formatKt(production2027.icsg)} kt.`;
+
+  renderGroupedComparisonChart(
+    "comparisonConsumptionChart",
+    rows,
+    "Total refined consumption",
+  );
+  renderGroupedComparisonChart(
+    "comparisonProductionChart",
+    rows,
+    "Total refined production",
+  );
+  renderModelComparisonRows(rows);
+}
+
 function setupTabNavigation() {
   const buttons = Array.from(document.querySelectorAll("[data-tab-target]"));
   buttons.forEach((button) => {
@@ -2083,6 +2527,7 @@ function render(state) {
   renderRegionalDemand(selectedRegional);
   renderMineSupply(selectedMine);
   renderSupplyTab(state, year);
+  renderModelComparisonTab(state);
 }
 
 async function loadDataset(url) {
@@ -2104,6 +2549,7 @@ async function loadJson(url) {
 async function init() {
   const files = regressionFiles();
   const workbookDataFiles = workbookFiles();
+  const icsgDataFiles = icsgFiles();
   const [
     scenarioEntries,
     regressionDataset,
@@ -2116,6 +2562,8 @@ async function init() {
     workbookDemandComponents,
     workbookMajorMines,
     workbookMineSupplyCountry,
+    icsgForecast,
+    icsgRegional,
   ] =
     await Promise.all([
       Promise.all(
@@ -2167,6 +2615,8 @@ async function init() {
       loadDataset(workbookDataFiles.demandComponents),
       loadDataset(workbookDataFiles.majorMines),
       loadDataset(workbookDataFiles.mineSupplyCountry),
+      loadDataset(icsgDataFiles.forecast),
+      loadDataset(icsgDataFiles.regional),
     ]);
 
   const state = {
@@ -2185,6 +2635,10 @@ async function init() {
       majorMines: workbookMajorMines,
       mineSupplyCountry: workbookMineSupplyCountry,
     },
+    icsg: {
+      forecast: icsgForecast,
+      regional: icsgRegional,
+    },
     selectedScenarioId: "base_case",
   };
   const scenarioSelect = document.getElementById("scenarioSelect");
@@ -2198,6 +2652,7 @@ async function init() {
   setupTabNavigation();
   renderRegressionTab(state.regression);
   renderWorkbookTab(state.workbook);
+  renderIcsgTab(state.icsg);
   render(state);
 }
 

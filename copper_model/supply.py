@@ -47,6 +47,9 @@ def _scenario_disruption_multiplier(config: dict[str, Any]) -> float:
 
 
 def _scenario_rest_of_world_growth(config: dict[str, Any]) -> float:
+    supply_config = config["supply"]
+    if "rest_of_world_growth" in supply_config:
+        return float(supply_config["rest_of_world_growth"])
     project_growth = float(config["supply"]["project_pipeline_growth"])
     disruption_loss = float(config["supply"]["disruption_loss"])
     return _clip(0.002 + 0.35 * project_growth - 0.25 * disruption_loss, -0.006, 0.010)
@@ -99,6 +102,20 @@ def build_supply_forecast(
     probability_multiplier = _scenario_probability_multiplier(config)
     disruption_multiplier = _scenario_disruption_multiplier(config)
     rest_growth = _scenario_rest_of_world_growth(config)
+    supply_config = config["supply"]
+    project_risk_discount_factor = _clip(
+        float(supply_config.get("project_risk_discount_factor", 1.0)), 0.0, 1.0
+    )
+    maintenance_loss_multiplier = float(
+        supply_config.get("maintenance_loss_multiplier", 1.0)
+    )
+    concentrate_capacity_growth = float(
+        supply_config.get("concentrate_processing_capacity_growth", 0.012)
+    )
+    smelter_constraint_capture_rate = float(
+        supply_config.get("smelter_constraint_capture_rate", 0.70)
+    )
+    blending_constraint_pct = float(supply_config.get("blending_constraint_pct", 0.0025))
 
     disruption_lookup: dict[tuple[str, int], float] = {}
     if not disruptions.empty:
@@ -112,6 +129,9 @@ def build_supply_forecast(
         probability = float(row["project_probability"])
         if str(row["status"]) in {"project", "expansion", "suspended"}:
             probability = _clip(probability * probability_multiplier, 0.0, 1.0)
+            probability = _clip(
+                1 - ((1 - probability) * project_risk_discount_factor), 0.0, 1.0
+            )
 
         for year in years:
             gross = _gross_asset_output(pd.Series(row), year, base_year)
@@ -122,7 +142,9 @@ def build_supply_forecast(
             maintenance_loss = (
                 0.0
                 if year == base_year
-                else risk_adjusted_before_losses * float(row["maintenance_allowance_pct"])
+                else risk_adjusted_before_losses
+                * float(row["maintenance_allowance_pct"])
+                * maintenance_loss_multiplier
             )
             disruption_loss = (
                 disruption_lookup.get((asset, year), 0.0) * disruption_multiplier
@@ -212,11 +234,11 @@ def build_supply_forecast(
                 "political_risk": "mixed",
                 "permitting_risk": "mixed",
                 "infrastructure_risk": "mixed",
-                "source_name": "USGS MCS 2026 global mine production",
-                "source_url": "https://pubs.usgs.gov/periodicals/mcs2026/mcs2026.pdf",
+                "source_name": "ICSG World Copper Factbook 2025 global mine production",
+                "source_url": "https://icsg.org/copper-factbook/",
                 "assumption_note": (
-                    "Residual global mine supply after named assets; grown with a conservative "
-                    "scenario-adjusted rest-of-world rate."
+                    "Residual global mine supply after named assets; grown with an explicit "
+                    "scenario rest-of-world rate."
                 ),
             }
         )
@@ -236,10 +258,15 @@ def build_supply_forecast(
         mine_supply = float(year_data["risk_adjusted_mine_supply_kt"].sum())
         concentrate_supply = float(year_data["concentrate_supply_kt"].sum())
         sxew_supply = float(year_data["sxew_supply_kt"].sum())
-        concentrate_capacity = base_concentrate_supply * ((1 + 0.012) ** (int(year) - base_year))
-        smelter_constraint = max(concentrate_supply - concentrate_capacity, 0.0) * 0.70
+        concentrate_capacity = base_concentrate_supply * (
+            (1 + concentrate_capacity_growth) ** (int(year) - base_year)
+        )
+        smelter_constraint = (
+            max(concentrate_supply - concentrate_capacity, 0.0)
+            * smelter_constraint_capture_rate
+        )
         blending_constraint = (
-            0.0 if int(year) == base_year else concentrate_supply * 0.0025
+            0.0 if int(year) == base_year else concentrate_supply * blending_constraint_pct
         )
         primary_before_constraints = mine_supply * primary_conversion_factor
         primary_refined = max(
@@ -282,7 +309,12 @@ def build_supply_forecast(
                 "concentrate_processing_capacity_kt": concentrate_capacity,
                 "rest_of_world_growth": rest_growth,
                 "project_probability_multiplier": probability_multiplier,
+                "project_risk_discount_factor": project_risk_discount_factor,
                 "disruption_multiplier": disruption_multiplier,
+                "maintenance_loss_multiplier": maintenance_loss_multiplier,
+                "concentrate_processing_capacity_growth": concentrate_capacity_growth,
+                "smelter_constraint_capture_rate": smelter_constraint_capture_rate,
+                "blending_constraint_pct": blending_constraint_pct,
             }
         )
 

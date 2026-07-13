@@ -61,10 +61,14 @@ regional demand growth =
   + income weight * GDP-per-capita growth
   + population weight * population growth
   + energy-transition bonus
+  + China property downturn drag
+  + substitution / intensity drag
   + scenario shock
 ```
 
 The macro growth rates are fixed historical CAGRs, not rolling future forecasts. For each region, the model takes the latest World Bank year available in `data/raw/world_bank_indicators.csv`, looks back `macro_lookback_years`, and applies that annualized rate to every forecast year. Industry activity is real GDP multiplied by industry share of GDP. GDP per capita growth is calculated directly as the CAGR of real GDP per person.
+
+The demand forecast now includes explicit copper-specific drags. China has a phased property-downturn adjustment so the trailing macro history does not mechanically project high construction-linked demand forever. Each region also has a substitution / intensity drag for material substitution, copper-thrifting, and efficiency.
 
 Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard now shows two kinds of tests:
 
@@ -78,8 +82,8 @@ Quarterly data would be a better way to test cyclical sensitivity, but a reprodu
 
 Supply is split into primary and secondary refined copper:
 
-- Primary supply now comes from a mine-level supply module. It starts from USGS 2024 world mine production, adds named operating mines and projects, applies ramp-up curves, project probabilities, planned maintenance allowances, disruption losses, and a residual rest-of-world supply bucket.
-- Mine supply is then converted into primary refined supply through a separate bridge. The bridge distinguishes mine copper content from refined copper output and applies a calibration factor plus smelter/refinery, blending, and maintenance constraints.
+- Primary supply now comes from a mine-level supply module. It starts from the ICSG 2024 world mine-production anchor, adds named operating mines and projects, applies ramp-up curves, lighter project probability discounts, planned maintenance allowances, disruption losses, and a residual rest-of-world supply bucket with an explicit scenario growth rate.
+- Mine supply is then converted into primary refined supply through a separate bridge. The bridge distinguishes mine copper content from refined copper output and applies a 2024 ICSG calibration factor plus looser smelter/refinery, blending, and maintenance constraints.
 - Secondary supply grows with demand and collection-rate assumptions.
 - Mine supply is also allocated by country using USGS 2024 mine-production shares.
 - The primary/secondary refined split starts from ICSG's 2024 refined-production mix. In the base case it is 83% primary and 17% secondary, grouping SX-EW refined output with primary supply.
@@ -97,9 +101,9 @@ For many mines, the model uses reported production directly because current ore 
 Edit `config/base_case.json`, `config/bull_case.json`, or `config/bear_case.json` to change:
 
 - forecast horizon;
-- 2024 demand baseline;
+- 2024 ICSG demand and supply baseline;
 - regional demand shares and growth weights;
-- mine/refinery growth assumptions;
+- mine/refinery growth assumptions, rest-of-world growth, project risk discounts, and conversion constraints;
 - scrap share and collection growth.
 
 Scenario framing:
@@ -108,7 +112,7 @@ Scenario framing:
 - Bull case: higher electrification demand, tighter supply, and lower scrap response.
 - Bear case: softer demand, stronger supply additions, and higher scrap response.
 
-The scenarios are not external forecasts. They are assumption sets built from the same public baseline. Each scenario changes demand-growth shocks, energy-transition bonuses, supply pipeline growth, disruption loss, and secondary-supply response.
+The scenarios are not external forecasts. They are assumption sets built from the same public baseline. Each scenario changes demand-growth shocks, energy-transition bonuses, China property drag, substitution drag, supply pipeline growth, rest-of-world growth, disruption loss, conversion constraints, and secondary-supply response.
 
 ## Data Sources
 
@@ -132,7 +136,7 @@ Seed tables in `data/seed/` are manually transcribed from:
 - Company/project public pages and annual-report context for named mine/project assumptions, linked row-by-row in `data/seed/global_copper_supply_assets.csv`.
 
 USGS reports the copper table in thousand metric tons of copper content unless otherwise specified.
-The global seed combines MCS 2025 history for 2023 with the MCS 2026 2024 update. The 2024 refined-supply baseline now uses the USGS MCS 2026 world refinery production figure of 27,600 kt. The country supply seed remains based on the transcribed MCS 2025 country table.
+The model now anchors the 2024 global baseline exactly to the transcribed ICSG historical balance seed: 22,990 kt mine production, 27,486 kt refined production, and 27,353 kt refined usage. USGS MCS 2026 remains a public cross-check for mine/refinery totals. The country supply seed remains based on the transcribed MCS 2025 country table.
 
 The main non-USGS assumption sources are:
 
@@ -151,7 +155,7 @@ python3 -m pytest
 
 ## Caveats
 
-- Public machine-readable global copper demand data is limited. The model sets 2024 refined demand from ICSG's 27.4 Mt refined-usage estimate and then projects forward from public macro drivers.
+- Public machine-readable global copper demand data is limited. The model sets 2024 refined demand exactly from the ICSG historical balance seed and then projects forward from public macro drivers plus explicit copper-specific adjustments.
 - Industry demand uses a real industry-output proxy: real GDP multiplied by World Bank industry value added as a percentage of GDP.
 - The model does not estimate inventory or price. It only reports the annual refined copper surplus or deficit.
 - The mine-level supply module is intentionally transparent rather than definitive. It uses public data, explicit assumptions, and probability weighting. A professional version should replace the seed CSV with paid mine-by-mine datasets, current TC/RC data, smelter maintenance schedules, concentrate quality assays, and regional trade-flow data.

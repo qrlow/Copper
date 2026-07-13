@@ -3,27 +3,34 @@
   "base_year": 2024,
   "forecast_end_year": 2035,
   "demand": {
-    "global_refined_demand_kt": 27400.0,
+    "global_refined_demand_kt": 27353.0,
     "regions": {
       "China": {
         "world_bank_code": "CHN",
         "share": 0.58,
-        "transition_growth_bonus": 0.002
+        "transition_growth_bonus": 0.001,
+        "property_downturn_drag": -0.02,
+        "property_downturn_start_year": 2025,
+        "property_downturn_end_year": 2030,
+        "substitution_drag": -0.004
       },
       "United States": {
         "world_bank_code": "USA",
         "share": 0.07,
-        "transition_growth_bonus": 0.002
+        "transition_growth_bonus": 0.001,
+        "substitution_drag": -0.004
       },
       "European Union": {
         "world_bank_code": "EUU",
         "share": 0.12,
-        "transition_growth_bonus": 0.002
+        "transition_growth_bonus": 0.001,
+        "substitution_drag": -0.004
       },
       "Rest of World": {
         "world_bank_code": "ROW",
         "share": 0.23,
-        "transition_growth_bonus": 0.001
+        "transition_growth_bonus": 0.0005,
+        "substitution_drag": -0.003
       }
     },
     "driver_weights": {
@@ -37,13 +44,19 @@
     "scenario_growth_shock": -0.006
   },
   "supply": {
-    "mine_production_kt": 23000.0,
-    "refinery_production_kt": 27600.0,
-    "primary_refined_share": 0.82,
+    "mine_production_kt": 22990.0,
+    "refinery_production_kt": 27486.0,
+    "primary_refined_share": 0.829,
     "recent_growth_floor": -0.005,
     "recent_growth_cap": 0.035,
     "project_pipeline_growth": 0.010,
-    "disruption_loss": 0.001
+    "disruption_loss": 0.001,
+    "project_risk_discount_factor": 0.55,
+    "rest_of_world_growth": 0.012,
+    "maintenance_loss_multiplier": 0.55,
+    "concentrate_processing_capacity_growth": 0.024,
+    "smelter_constraint_capture_rate": 0.3,
+    "blending_constraint_pct": 0.001
   },
   "secondary_supply": {
     "collection_growth": 0.008,

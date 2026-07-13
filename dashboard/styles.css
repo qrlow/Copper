@@ -1040,8 +1040,25 @@ input[type="range"] {
   gap: 16px;
 }
 
-.workbook-grid .panel.wide {
+.icsg-grid,
+.comparison-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  gap: 16px;
+}
+
+.workbook-grid .panel.wide,
+.icsg-grid .panel.wide,
+.comparison-grid .panel.wide {
   grid-column: 1 / -1;
+}
+
+.metric strong.positive {
+  color: var(--green);
+}
+
+.metric strong.negative {
+  color: var(--red);
 }
 
 .narrative-grid {
@@ -1182,6 +1199,10 @@ input[type="range"] {
   min-height: 310px;
 }
 
+.comparison-chart {
+  min-height: 310px;
+}
+
 .component-line {
   fill: none;
   stroke-width: 3;
@@ -1254,6 +1275,14 @@ input[type="range"] {
 
 .workbook-table {
   min-width: 940px;
+}
+
+.icsg-table {
+  min-width: 780px;
+}
+
+.model-comparison-table {
+  min-width: 1080px;
 }
 
 .workbook-country-bars {
@@ -1518,7 +1547,9 @@ input[type="range"] {
   .regression-grid,
   .regression-plot-grid,
   .workbook-metrics,
-  .workbook-grid {
+  .workbook-grid,
+  .icsg-grid,
+  .comparison-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1559,6 +1590,8 @@ input[type="range"] {
   .regression-plot-grid,
   .workbook-metrics,
   .workbook-grid,
+  .icsg-grid,
+  .comparison-grid,
   .supply-grid {
     grid-template-columns: 1fr;
   }
