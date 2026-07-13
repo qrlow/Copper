@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-supply-bridge-waterfall";
+const DATA_VERSION = "2026-07-13-remove-supply-driver-section";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -678,121 +678,6 @@ function gradeRecoveryLabel(row) {
   return `${formatNumber(grade, 2)}% / ${formatNumber(recovery, 0)}%`;
 }
 
-function renderSupplyDriverDisclosure(summaryRow, assetRows, config, year) {
-  const namedSupply = assetRows
-    .filter((row) => row.asset !== "Rest of World aggregate")
-    .reduce((sum, row) => sum + Number(row.risk_adjusted_mine_supply_kt || 0), 0);
-  const restSupply = assetRows
-    .filter((row) => row.asset === "Rest of World aggregate")
-    .reduce((sum, row) => sum + Number(row.risk_adjusted_mine_supply_kt || 0), 0);
-  const mineSupply = Number(summaryRow.mine_supply_kt || 0);
-  const totalLoss =
-    Number(summaryRow.maintenance_loss_kt || 0) +
-    Number(summaryRow.disruption_loss_kt || 0) +
-    Number(summaryRow.project_probability_discount_kt || 0);
-  const conversionConstraint =
-    Number(summaryRow.smelter_refinery_constraint_kt || 0) +
-    Number(summaryRow.blending_constraint_kt || 0);
-  const primaryConversionFactor = Number(summaryRow.primary_conversion_factor || 0);
-  const secondaryConfig = config.secondary_supply;
-
-  const cards = [
-    {
-      label: "Named Assets",
-      value: `${formatKt(namedSupply)} kt`,
-      detail: `${formatPct(namedSupply / mineSupply)} of modelled ${year} mine supply.`,
-    },
-    {
-      label: "Rest Of World Residual",
-      value: `${formatKt(restSupply)} kt`,
-      detail: `Fills the gap to the ICSG mine-production anchor; grows at ${formatPct(
-        summaryRow.rest_of_world_growth,
-      )} per year in this scenario.`,
-    },
-    {
-      label: "Risk / Operating Deductions",
-      value: `${formatKt(totalLoss)} kt`,
-      detail: "Maintenance, disruptions, and probability discounts deducted from gross asset output.",
-    },
-    {
-      label: "Mine To Primary Refined",
-      value: `${formatNumber(primaryConversionFactor, 3)}x`,
-      detail: `${formatKt(conversionConstraint)} kt of smelter/refinery and blending constraints in ${year}.`,
-    },
-  ];
-
-  document.getElementById("supplyDriverCards").innerHTML = cards
-    .map((card) => `
-      <article class="supply-driver-card">
-        <span>${card.label}</span>
-        <strong>${card.value}</strong>
-        <p>${card.detail}</p>
-      </article>
-    `)
-    .join("");
-
-  const used = [
-    {
-      title: "Reported 2024 production and target/nameplate output",
-      body: "These set each named asset's gross production path before risk deductions.",
-    },
-    {
-      title: "Status, start year, and ramp-up years",
-      body: "These determine whether an asset is producing now, expanding, ramping, or still a future project.",
-    },
-    {
-      title: "Project probability, maintenance, and disruptions",
-      body: `These directly reduce mine output. Current selected-year deduction: ${formatKt(totalLoss)} kt.`,
-    },
-    {
-      title: "Rest-of-world residual",
-      body: `${formatKt(restSupply)} kt is added so named assets plus residual equal ${formatKt(
-        mineSupply,
-      )} kt of total mine supply.`,
-    },
-    {
-      title: "Route split and processing constraints",
-      body: "Concentrate/SX-EW route, smelter/refinery capacity, and blending allowances convert mine supply into primary refined supply.",
-    },
-    {
-      title: "Secondary refined supply rule",
-      body: `Secondary supply starts from the 2024 refined-production anchor and grows with ${formatPct(
-        secondaryConfig.demand_link,
-        0,
-      )} of demand growth plus ${formatPct(secondaryConfig.collection_growth)} collection growth.`,
-    },
-  ];
-  const notUsed = [
-    {
-      title: "Grade and recovery percentages",
-      body: "Displayed for technical context only. They do not currently calculate mine output because ore throughput is not modelled asset by asset.",
-    },
-    {
-      title: "Contained-copper formula",
-      body: "Shown as an audit formula. The current model starts from reported kt production, not ore processed times grade times recovery.",
-    },
-    {
-      title: "Technical capacity",
-      body: "Displayed as context. The production path is driven by 2024 output, target/nameplate output, ramp-up, and risk assumptions.",
-    },
-    {
-      title: "Political, permitting, and infrastructure tags",
-      body: "Shown as qualitative risk labels. Numeric risk enters through project probability, maintenance, disruption, and scenario assumptions.",
-    },
-    {
-      title: "Source and assumption notes",
-      body: "Used for auditability and links, not as numeric drivers in the calculation.",
-    },
-  ];
-
-  document.getElementById("supplyUsedList").innerHTML = used
-    .map((item) => `<li><strong>${item.title}</strong><span>${item.body}</span></li>`)
-    .join("");
-  document.getElementById("supplyNotUsedList").innerHTML = notUsed
-    .map((item) => `<li><strong>${item.title}</strong><span>${item.body}</span></li>`)
-    .join("");
-}
-
 function renderSupplyProjectRows(assetRows) {
   const rows = assetRows
     .filter((row) =>
@@ -897,7 +782,6 @@ function renderSupplyTab(state, year) {
     )} kt mine supply, which is upstream mined copper content, not refined copper output.`;
 
   renderSupplyMethodSummary(summaryRow);
-  renderSupplyDriverDisclosure(summaryRow, assetRows, scenario.config, year);
   renderSupplyBridge(scenario.supplyBridge, year);
   renderSupplyBucketChart(assetRows);
   renderSupplyRiskRows(assetRows);
