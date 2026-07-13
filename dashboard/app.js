@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-remove-supply-driver-section";
+const DATA_VERSION = "2026-07-13-market-balance-color";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -1056,7 +1056,10 @@ function updateMetrics(row) {
   document.getElementById("selectedYearLabel").textContent = row.year;
   document.getElementById("metricDemand").textContent = formatKt(row.demand_kt);
   document.getElementById("metricSupply").textContent = formatKt(row.refined_supply_kt);
-  document.getElementById("metricBalance").textContent = formatSignedKt(row.market_balance_kt);
+  const metricBalance = document.getElementById("metricBalance");
+  metricBalance.textContent = formatSignedKt(row.market_balance_kt);
+  metricBalance.className =
+    row.market_balance_kt > 0 ? "positive" : row.market_balance_kt < 0 ? "negative" : "";
   document.getElementById("balanceBadge").textContent = `${formatSignedKt(row.market_balance_kt)} kt`;
 }
 
