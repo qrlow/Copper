@@ -1302,6 +1302,90 @@ input[type="range"] {
   color: var(--red);
 }
 
+.waterfall-chart {
+  min-height: 470px;
+}
+
+.waterfall-chart svg {
+  margin-top: 4px;
+}
+
+.waterfall-bar {
+  stroke: rgba(32, 33, 36, 0.14);
+  stroke-width: 1;
+}
+
+.waterfall-bar.total {
+  fill: var(--copper);
+}
+
+.waterfall-bar.positive {
+  fill: var(--teal);
+}
+
+.waterfall-bar.negative {
+  fill: var(--red);
+}
+
+.waterfall-connector {
+  stroke: #9b948a;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.waterfall-chart .waterfall-value {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.waterfall-chart .waterfall-label {
+  fill: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.waterfall-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waterfall-notes li {
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7f3;
+}
+
+.waterfall-notes strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.waterfall-notes span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.waterfall-notes strong .positive {
+  color: var(--green);
+}
+
+.waterfall-notes strong .negative {
+  color: var(--red);
+}
+
+.waterfall-notes strong .neutral {
+  color: var(--ink);
+}
+
 .compact-chart {
   min-height: 240px;
 }
@@ -1705,6 +1789,7 @@ input[type="range"] {
   .comparison-grid,
   .supply-driver-grid,
   .supply-driver-columns,
+  .waterfall-notes,
   .supply-grid {
     grid-template-columns: 1fr;
   }

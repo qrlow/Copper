@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-supply-driver-disclosure";
+const DATA_VERSION = "2026-07-13-supply-bridge-waterfall";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -486,28 +486,113 @@ function renderSupplyBridge(rows, year) {
     .filter((row) => Math.round(row.year) === year)
     .sort((a, b) => Number(a.step_order) - Number(b.step_order));
   const container = document.getElementById("supplyBridgeRows");
-  const maxAbs = Math.max(...bridgeRows.map((row) => Math.abs(Number(row.kt))), 1);
-  container.innerHTML = bridgeRows
-    .map((row) => {
-      const value = Number(row.kt);
-      const width = Math.max((Math.abs(value) / maxAbs) * 48, 1);
-      const left = value < 0 ? 50 - width : 50;
-      const tone = value < -1 ? "negative" : value > 1 ? "positive" : "neutral";
+  if (!bridgeRows.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const width = 980;
+  const height = 420;
+  const margin = { top: 30, right: 34, bottom: 112, left: 74 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+  const barGap = 24;
+  const barWidth = Math.max(50, (chartWidth - barGap * (bridgeRows.length - 1)) / bridgeRows.length);
+  let running = 0;
+  const items = bridgeRows.map((row) => {
+    const value = Number(row.kt);
+    const isTotal =
+      row.step === "Risk-adjusted mine supply" ||
+      row.step === "Primary refined supply" ||
+      row.step === "Total refined supply";
+    const start = isTotal ? 0 : running;
+    const end = isTotal ? value : running + value;
+    running = end;
+    return {
+      ...row,
+      value,
+      isTotal,
+      start,
+      end,
+      low: Math.min(start, end),
+      high: Math.max(start, end),
+    };
+  });
+  const maxY = Math.max(...items.map((item) => item.high), 1) * 1.08;
+  const y = scaleLinear(0, maxY, margin.top + chartHeight, margin.top);
+  const ticks = [0, maxY * 0.25, maxY * 0.5, maxY * 0.75, maxY].map((tick) =>
+    Math.round(tick / 1000) * 1000,
+  );
+  const uniqueTicks = [...new Set(ticks)].filter((tick) => tick >= 0);
+
+  const bars = items
+    .map((item, index) => {
+      const x = margin.left + index * (barWidth + barGap);
+      const yTop = y(item.high);
+      const yBottom = y(item.low);
+      const rectHeight = Math.max(yBottom - yTop, 2);
+      const tone = item.isTotal ? "total" : item.value < 0 ? "negative" : "positive";
+      const label = item.isTotal ? `${formatKt(item.value)} kt` : `${formatSignedKt(item.value)} kt`;
+      const labelY = yTop - 8;
+      const stepLabel = String(item.step)
+        .replace("Risk-adjusted ", "Risk-adjusted\n")
+        .replace("Payable / route ", "Payable / route\n")
+        .replace("Smelter / refinery ", "Smelter /\nrefinery ")
+        .replace("Blending / maintenance ", "Blending /\nmaintenance ")
+        .replace("Primary refined ", "Primary refined\n")
+        .replace("Secondary refined ", "Secondary refined\n")
+        .replace("Total refined ", "Total refined\n");
+      const textLines = stepLabel.split("\n");
+      const connector =
+        index < items.length - 1
+          ? `<line class="waterfall-connector" x1="${x + barWidth}" x2="${
+              x + barWidth + barGap
+            }" y1="${y(item.end)}" y2="${y(item.end)}" />`
+          : "";
       return `
-        <div class="bridge-row">
-          <div class="bridge-copy">
-            <strong>${row.step}</strong>
-            <span>${row.note}</span>
-          </div>
-          <span class="bridge-track">
-            <span class="bridge-zero"></span>
-            <span class="bridge-fill ${tone}" style="left:${left}%;width:${width}%"></span>
-          </span>
-          <strong class="bridge-value ${tone}">${formatSignedKt(value)} kt</strong>
-        </div>
+        <g>
+          <rect class="waterfall-bar ${tone}" x="${x}" y="${yTop}" width="${barWidth}" height="${rectHeight}">
+            <title>${item.step}: ${label}. ${item.note}</title>
+          </rect>
+          ${connector}
+          <text class="waterfall-value" x="${x + barWidth / 2}" y="${labelY}" text-anchor="middle">${label}</text>
+          ${textLines
+            .map(
+              (line, lineIndex) =>
+                `<text class="waterfall-label" x="${x + barWidth / 2}" y="${
+                  margin.top + chartHeight + 26 + lineIndex * 14
+                }" text-anchor="middle">${line}</text>`,
+            )
+            .join("")}
+        </g>
       `;
     })
     .join("");
+
+  const notes = items
+    .map((item) => {
+      const tone = item.isTotal ? "neutral" : item.value < 0 ? "negative" : "positive";
+      const value = item.isTotal ? `${formatKt(item.value)} kt` : `${formatSignedKt(item.value)} kt`;
+      return `<li><strong>${item.step}: <span class="${tone}">${value}</span></strong><span>${item.note}</span></li>`;
+    })
+    .join("");
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="presentation" aria-hidden="true">
+      ${uniqueTicks
+        .map(
+          (tick) => `
+            <line class="grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y(tick)}" y2="${y(tick)}" />
+            <text class="axis-tick" x="${margin.left - 12}" y="${y(tick) + 4}" text-anchor="end">${formatKt(tick)}</text>
+          `,
+        )
+        .join("")}
+      <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${margin.top + chartHeight}" y2="${margin.top + chartHeight}" />
+      <text class="axis-title" x="${margin.left}" y="18">kt copper</text>
+      ${bars}
+    </svg>
+    <ul class="waterfall-notes">${notes}</ul>
+  `;
 }
 
 function renderSupplyBucketChart(assetRows) {
