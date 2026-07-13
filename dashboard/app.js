@@ -19,7 +19,7 @@ const SCENARIOS = [
   },
 ];
 
-const DATA_VERSION = "2026-07-13-demand-driver-region-toggle";
+const DATA_VERSION = "2026-07-13-fixed-demand-driver-weights";
 const APP_ROOT = new URL("../", window.location.href);
 const RELATIONSHIP_PLOT_ORDER = [
   {
@@ -1194,7 +1194,7 @@ function renderScenarioExplanation(state) {
     {
       label: "Demand driver weights",
       source: sourceNote(
-        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights are scenario assumptions. The regression files are kept as a diagnostic and are not used as the forecast weights because the fit is weak and the predictors overlap mechanically: GDP per capita plus population approximately reconstructs GDP growth, while industry activity already contains GDP.",
+        "World Bank GDP, industry-share, and population indicators are the public drivers. The model converts them into fixed 10-year historical CAGRs: industry activity is real GDP times industry share, GDP per capita is real GDP per person, and population is total population. The weights are fixed across base, bull, and bear so the core demand equation stays stable; scenarios differ through transition bonuses, property drag, substitution drag, growth caps/floors, and scenario shock. The regression files are kept as a diagnostic and are not used as the forecast weights because the fit is weak and the predictors overlap mechanically: GDP per capita plus population approximately reconstructs GDP growth, while industry activity already contains GDP.",
         [
           sourceLink("ICSG historical usage", sourceUrls.icsgHistoricalBalance),
           sourceLink("GDP", sourceUrls.worldBankGdp),

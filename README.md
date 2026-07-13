@@ -70,7 +70,7 @@ The macro growth rates are fixed historical CAGRs, not rolling future forecasts.
 
 The demand forecast now includes explicit copper-specific drags. China has a phased property-downturn adjustment so the trailing macro history does not mechanically project high construction-linked demand forever. Each region also has a substitution / intensity drag for material substitution, copper-thrifting, and efficiency.
 
-Demand driver weights are explicit scenario assumptions, not regression outputs. The `estimate-weights` command is kept as a diagnostic check: it tests global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard now shows two kinds of tests:
+Demand driver weights are fixed model assumptions, not regression outputs and not scenario-specific. Base, bull, and bear all use the same 55% industry, 30% income, and 15% population weights so the core demand equation stays stable. The scenarios instead differ through copper-specific overlays such as energy-transition bonus, China property drag, substitution drag, growth caps/floors, and scenario shock. The `estimate-weights` command is kept as a diagnostic check: it tests global refined copper usage growth from the ICSG Factbook against World Bank macro growth. The dashboard now shows two kinds of tests:
 
 - A long-run log-level test of refined usage against world real GDP. This has very high R-squared because both series trend upward over decades. It is useful evidence that copper consumption scales with economic activity, but it is not a clean annual forecasting model.
 - World real GDP diagnostics, which are the closest match to the market rule-of-thumb that a 1 percentage point change in world real GDP growth is associated with roughly a 0.9 percentage point change in global copper demand growth. In the 1961-2024 annual public-data sample, the no-intercept slope is about 0.93. With an intercept, annual R-squared is about 0.321. Using 5-year CAGRs raises R-squared to about 0.395.
@@ -102,7 +102,7 @@ Edit `config/base_case.json`, `config/bull_case.json`, or `config/bear_case.json
 
 - forecast horizon;
 - 2024 ICSG demand and supply baseline;
-- regional demand shares and growth weights;
+- regional demand shares and fixed macro-driver weights;
 - mine/refinery growth assumptions, rest-of-world growth, project risk discounts, and conversion constraints;
 - scrap share and collection growth.
 

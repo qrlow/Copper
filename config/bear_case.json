@@ -34,9 +34,9 @@
       }
     },
     "driver_weights": {
-      "industry_value_added": 0.50,
-      "gdp_per_capita": 0.32,
-      "population": 0.18
+      "industry_value_added": 0.55,
+      "gdp_per_capita": 0.30,
+      "population": 0.15
     },
     "macro_lookback_years": 10,
     "growth_floor": -0.025,
